@@ -3888,7 +3888,7 @@ document.addEventListener('DOMContentLoaded', function () {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             credentials: 'same-origin',
-            keepalive: accion === 'guardar_progreso',
+            keepalive: accion === 'guardar_progreso' || accion === 'guardar_progreso_learning',
             body: JSON.stringify(payload)
         });
 
@@ -4174,17 +4174,36 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Historial + continuar viendo. Se guarda de forma moderada para no saturar la BD.
+    // V3.2.1: progreso publico y progreso academico son independientes.
     const video = document.getElementById('deviozVideoPlayer');
     if (video && config.authenticated) {
+        const esLearning = Boolean(config.learningMode && Number(config.learningAssignment || 0) > 0);
+        const leccionCompletada = Boolean(config.learningLessonCompleted);
         let ultimoGuardado = 0;
         let restaurado = false;
+        let maxVisto = Math.max(0, Number(config.learningMaxSeconds || 0));
+        let corrigiendoSeek = false;
+        let avisoSeekMostrado = false;
 
-        function guardarProgreso(forzar) {
+        function guardarProgreso(forzar, finalizado) {
             if (!Number.isFinite(video.duration) || video.duration <= 0) return;
             const posicion = Math.floor(video.currentTime || 0);
-            if (!forzar && Math.abs(posicion - ultimoGuardado) < 12) return;
+            if (!forzar && Math.abs(posicion - ultimoGuardado) < 10) return;
             ultimoGuardado = posicion;
+
+            if (esLearning) {
+                action('guardar_progreso_learning', {
+                    posicion: posicion,
+                    duracion: Math.floor(video.duration),
+                    learning_asignacion: Number(config.learningAssignment || 0),
+                    finalizado: finalizado ? 1 : 0
+                }).then(function (resultado) {
+                    if (resultado && Number.isFinite(Number(resultado.max_posicion))) {
+                        maxVisto = Math.max(maxVisto, Number(resultado.max_posicion));
+                    }
+                }).catch(function () {});
+                return;
+            }
 
             action('guardar_progreso', {
                 posicion: posicion,
@@ -4197,15 +4216,44 @@ document.addEventListener('DOMContentLoaded', function () {
             restaurado = true;
             const punto = Number(config.progressSeconds || 0);
             const porcentaje = Number(config.progressPercent || 0);
+
+            if (esLearning) {
+                maxVisto = Math.max(maxVisto, punto);
+            }
+
             if (punto >= 5 && porcentaje < 95 && punto < video.duration - 8) {
+                corrigiendoSeek = true;
                 video.currentTime = punto;
+                window.setTimeout(function () { corrigiendoSeek = false; }, 100);
                 showToast('Continuamos desde ' + Math.floor(punto / 60) + ':' + String(punto % 60).padStart(2, '0') + '.');
             }
         });
 
-        video.addEventListener('timeupdate', function () { guardarProgreso(false); });
-        video.addEventListener('pause', function () { guardarProgreso(true); });
-        video.addEventListener('ended', function () { guardarProgreso(true); });
+        if (esLearning && !leccionCompletada) {
+            video.addEventListener('seeking', function () {
+                if (corrigiendoSeek) return;
+                const limite = Math.min(video.duration || Infinity, maxVisto + 2.5);
+                if (video.currentTime > limite) {
+                    corrigiendoSeek = true;
+                    video.currentTime = Math.max(0, maxVisto);
+                    window.setTimeout(function () { corrigiendoSeek = false; }, 120);
+                    if (!avisoSeekMostrado) {
+                        showToast('Esta leccion requiere ver el contenido en orden. Puedes retroceder, pero no adelantar partes no vistas.', true);
+                        avisoSeekMostrado = true;
+                        window.setTimeout(function () { avisoSeekMostrado = false; }, 3500);
+                    }
+                }
+            });
+        }
+
+        video.addEventListener('timeupdate', function () {
+            if (esLearning && !video.seeking && !leccionCompletada) {
+                maxVisto = Math.max(maxVisto, Number(video.currentTime || 0));
+            }
+            guardarProgreso(false, false);
+        });
+        video.addEventListener('pause', function () { guardarProgreso(true, false); });
+        video.addEventListener('ended', function () { guardarProgreso(true, true); });
     }
 });
 

@@ -1,0 +1,16 @@
+TECHFLIX V3.2.1 - HOTFIX ORDEN SECUENCIAL
+
+Reemplazar SOLO estos archivos respetando sus rutas:
+- public/detalle.php
+- public/curso.php
+- models/Learning.php
+- assets/css/public.css
+
+NO requiere migracion SQL.
+NO tocar uploads.
+
+Cambio:
+- En capacitaciones con orden secuencial, una leccion futura queda bloqueada hasta completar la obligatoria anterior.
+- La lista lateral del reproductor muestra candado y no permite abrir la leccion futura.
+- Si se intenta abrir una URL futura manualmente, el servidor redirige al curso.
+- El backend tambien rechaza progreso enviado a una leccion futura bloqueada.

@@ -45,26 +45,6 @@ if(!$video)
 }
 
 
-// AUMENTAR VISTA
-$videoController->aumentarVista($id);
-$video["vistas"] = (int)$video["vistas"] + 1;
-
-// INTERACCIONES DE USUARIO
-$estadoInteraccion = $interaccionController->estadoVideo(
-    usuarioAutenticado() ? (int)$_SESSION["id_usuario"] : 0,
-    $id
-);
-$progresoVideo = ["posicion_segundos" => 0, "duracion_segundos" => 0, "porcentaje" => 0];
-$playlistsUsuario = [];
-
-if(usuarioAutenticado())
-{
-    $idUsuarioActual = (int)$_SESSION["id_usuario"];
-    $interaccionController->registrarHistorial($idUsuarioActual, $id);
-    $progresoVideo = $interaccionController->obtenerProgreso($idUsuarioActual, $id);
-    $playlistsUsuario = $interaccionController->playlistsUsuario($idUsuarioActual);
-}
-
 $comentariosVideo = $interaccionController->comentariosVideo($id);
 $comentariosRaiz = [];
 $respuestasComentarios = [];
@@ -124,6 +104,7 @@ $learningContext = null;
 $learningLecciones = [];
 $learningCurrentLesson = null;
 $learningNextLesson = null;
+$learningLessonLocked = [];
 if($learningAsignacion && usuarioAutenticado())
 {
     require_once "../controllers/LearningController.php";
@@ -133,16 +114,32 @@ if($learningAsignacion && usuarioAutenticado())
     if($learningContext)
     {
         $learningLecciones = $learningController->leccionesAsignacion((int)$learningAsignacion, (int)$_SESSION["id_usuario"]);
+        $learningPrevObligatoriaCompleta = true;
+
         foreach($learningLecciones as $learningIndex => $learningLesson)
         {
+            $learningLessonComplete = (($learningLesson["progreso_estado"] ?? "pendiente") === "completada");
+            $learningLessonIsLocked = !empty($learningContext["orden_secuencial"])
+                && !$learningPrevObligatoriaCompleta
+                && !$learningLessonComplete;
+
+            $learningLessonLocked[(int)$learningLesson["id_leccion"]] = $learningLessonIsLocked;
+
             if((int)$learningLesson["id_video"] === (int)$id)
             {
                 $learningCurrentLesson = $learningLesson;
                 if(isset($learningLecciones[$learningIndex + 1]))
                 {
+                    // Se conserva para autoplay. Cuando el video actual termine,
+                    // su progreso ya habrá sido guardado y la siguiente lección
+                    // quedará desbloqueada al cargarla.
                     $learningNextLesson = $learningLecciones[$learningIndex + 1];
                 }
-                break;
+            }
+
+            if(!empty($learningLesson["obligatoria"]) && !$learningLessonComplete)
+            {
+                $learningPrevObligatoriaCompleta = false;
             }
         }
 
@@ -153,8 +150,52 @@ if($learningAsignacion && usuarioAutenticado())
             $learningContext = null;
             $learningLecciones = [];
             $learningNextLesson = null;
+            $learningLessonLocked = [];
+        }
+        elseif(!empty($learningContext["orden_secuencial"])
+            && !empty($learningLessonLocked[(int)$learningCurrentLesson["id_leccion"]]))
+        {
+            // Protección del lado servidor: aunque el usuario escriba manualmente
+            // la URL de una lección futura, no puede saltarse el orden del curso.
+            header("Location: curso.php?asignacion=" . (int)$learningAsignacion . "&leccion_bloqueada=1");
+            exit;
         }
     }
+}
+
+// INTERACCIONES DE USUARIO. En una capacitacion el consumo del video se registra
+// como progreso academico y no incrementa las vistas/historial/progreso publico.
+$esVistaLearning = (bool)($learningContext && $learningCurrentLesson);
+if(!$esVistaLearning)
+{
+    $videoController->aumentarVista($id);
+    $video["vistas"] = (int)$video["vistas"] + 1;
+}
+
+$estadoInteraccion = $interaccionController->estadoVideo(
+    usuarioAutenticado() ? (int)$_SESSION["id_usuario"] : 0,
+    $id
+);
+$progresoVideo = ["posicion_segundos" => 0, "duracion_segundos" => 0, "porcentaje" => 0];
+$playlistsUsuario = [];
+
+if(usuarioAutenticado())
+{
+    $idUsuarioActual = (int)$_SESSION["id_usuario"];
+    if($esVistaLearning)
+    {
+        $progresoVideo = [
+            "posicion_segundos" => (int)($learningCurrentLesson["posicion_segundos"] ?? 0),
+            "duracion_segundos" => (int)($learningCurrentLesson["duracion_segundos"] ?? 0),
+            "porcentaje" => (float)($learningCurrentLesson["porcentaje"] ?? 0),
+        ];
+    }
+    else
+    {
+        $interaccionController->registrarHistorial($idUsuarioActual, $id);
+        $progresoVideo = $interaccionController->obtenerProgreso($idUsuarioActual, $id);
+    }
+    $playlistsUsuario = $interaccionController->playlistsUsuario($idUsuarioActual);
 }
 
 
@@ -395,6 +436,11 @@ else
         <span>TECHFLIX LEARNING LAB</span>
         <strong><?php echo htmlspecialchars($learningContext["capacitacion"]); ?></strong>
         <small><?php echo (float)$learningContext["progreso"]["porcentaje"]; ?>% completado · fecha límite <?php echo htmlspecialchars($learningContext["fecha_limite"]); ?></small>
+        <?php if(($learningCurrentLesson["progreso_estado"] ?? "") !== "completada"): ?>
+        <small class="learning-watch-lock">🔒 Avance protegido: puedes retroceder, pero no adelantar partes que aun no has visto.</small>
+        <?php else: ?>
+        <small class="learning-watch-lock is-complete">✓ Leccion completada: puedes desplazarte libremente por el video.</small>
+        <?php endif; ?>
     </div>
     <a href="curso.php?asignacion=<?php echo (int)$learningAsignacion; ?>">Volver al curso →</a>
 </div>
@@ -973,15 +1019,29 @@ Descripción
 
 <div class="learning-player-lessons">
 <?php foreach($learningLecciones as $lessonIndex => $lesson): ?>
+<?php
+    $lessonLocked = !empty($learningLessonLocked[(int)$lesson["id_leccion"]]);
+    $lessonActual = ((int)$lesson["id_video"] === (int)$id);
+    $lessonComplete = (($lesson["progreso_estado"] ?? "pendiente") === "completada");
+?>
+<?php if($lessonLocked): ?>
+<div class="related-card learning-player-lesson-locked" aria-disabled="true" title="Completa la lección anterior para continuar">
+    <div>
+        <h3>🔒 <?php echo str_pad((string)($lessonIndex + 1), 2, "0", STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($lesson["titulo"]); ?></h3>
+        <p><?php echo round((float)$lesson["porcentaje"]); ?>% visto · <?php echo !empty($lesson["obligatoria"]) ? "Obligatoria" : "Opcional"; ?> · Bloqueada</p>
+    </div>
+</div>
+<?php else: ?>
 <a
 href="detalle.php?id=<?php echo (int)$lesson["id_video"]; ?>&learning_asignacion=<?php echo (int)$learningAsignacion; ?>"
-class="related-card <?php echo (int)$lesson["id_video"] === (int)$id ? "actual-capitulo" : ""; ?>"
+class="related-card <?php echo $lessonActual ? "actual-capitulo" : ""; ?>"
 >
     <div>
-        <h3><?php echo $lesson["progreso_estado"] === "completada" ? "✓" : str_pad((string)($lessonIndex + 1), 2, "0", STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($lesson["titulo"]); ?></h3>
+        <h3><?php echo $lessonComplete ? "✓" : str_pad((string)($lessonIndex + 1), 2, "0", STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($lesson["titulo"]); ?></h3>
         <p><?php echo round((float)$lesson["porcentaje"]); ?>% visto · <?php echo !empty($lesson["obligatoria"]) ? "Obligatoria" : "Opcional"; ?></p>
     </div>
 </a>
+<?php endif; ?>
 <?php endforeach; ?>
 </div>
 
@@ -1385,6 +1445,9 @@ window.DEVIOZ_INTERACTIONS = <?php echo json_encode([
     'progressSeconds' => (int)($progresoVideo['posicion_segundos'] ?? 0),
     'progressPercent' => (float)($progresoVideo['porcentaje'] ?? 0),
     'learningAssignment' => $learningContext ? (int)$learningAsignacion : 0,
+    'learningMode' => $esVistaLearning,
+    'learningLessonCompleted' => $esVistaLearning && (($learningCurrentLesson['progreso_estado'] ?? '') === 'completada'),
+    'learningMaxSeconds' => $esVistaLearning ? (int)($learningCurrentLesson['max_posicion_segundos'] ?? 0) : 0,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 </script>
 

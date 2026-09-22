@@ -72,6 +72,26 @@ try {
             echo json_encode($resultado, JSON_UNESCAPED_UNICODE);
             break;
 
+        case 'guardar_progreso_learning':
+            $video = (int)($datos['id_video'] ?? 0);
+            $learningAsignacion = (int)($datos['learning_asignacion'] ?? 0);
+            if ($video <= 0 || $learningAsignacion <= 0) { throw new InvalidArgumentException('Leccion o asignacion invalida.'); }
+            require_once __DIR__ . '/../controllers/LearningController.php';
+            $learning = new LearningController();
+            $resultado = $learning->guardarProgresoLeccion(
+                $learningAsignacion,
+                $video,
+                $idUsuario,
+                (int)($datos['posicion'] ?? 0),
+                (int)($datos['duracion'] ?? 0),
+                !empty($datos['finalizado'])
+            );
+            if (empty($resultado['ok'])) {
+                throw new InvalidArgumentException((string)($resultado['mensaje'] ?? 'No se pudo guardar el progreso academico.'));
+            }
+            echo json_encode($resultado, JSON_UNESCAPED_UNICODE);
+            break;
+
         case 'crear_playlist':
             $id = $controller->crearPlaylist(
                 $idUsuario,

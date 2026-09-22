@@ -28,6 +28,8 @@ class LearningController
     public function catalogoCursosParaUsuario($u){ return $this->modelo->catalogoCursosParaUsuario((int)$u); }
     public function detalleAsignacion($a,$u){ return $this->modelo->detalleAsignacion((int)$a,(int)$u); }
     public function leccionesAsignacion($a,$u){ return $this->modelo->leccionesAsignacion((int)$a,(int)$u); }
+    public function progresoLeccionAsignacion($a,$v,$u){ return $this->modelo->progresoLeccionAsignacion((int)$a,(int)$v,(int)$u); }
+    public function guardarProgresoLeccion($a,$v,$u,$p,$d,$f=false){ return $this->modelo->guardarProgresoLeccion((int)$a,(int)$v,(int)$u,(int)$p,(int)$d,(bool)$f); }
     public function marcarLeccionCompleta($a,$l,$u){ return $this->modelo->marcarLeccionCompleta((int)$a,(int)$l,(int)$u); }
     public function listarEvaluacionesAdmin(){ return $this->modelo->listarEvaluacionesAdmin(); }
     public function evaluacionCurso($c,$p=false){ return $this->modelo->evaluacionCurso((int)$c,(bool)$p); }

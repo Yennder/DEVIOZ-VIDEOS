@@ -6818,3 +6818,48 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:"Manrope","Segoe UI
     .serie-catalog-actions .btn-primary-modern{justify-content:center}
     .serie-catalog-meta{width:100%;box-sizing:border-box}
 }
+
+
+/* TECHFLIX V3.2.1 - progreso academico protegido */
+.learning-watch-lock {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-muted, #9db0ba);
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+.learning-watch-lock.is-complete {
+    color: var(--accent, #20c7d9);
+}
+
+
+/* =========================================================
+   TECHFLIX V3.2.1 - ORDEN SECUENCIAL EN CAPACITACIONES
+   2026-09-22
+========================================================= */
+.learning-player-lessons .learning-player-lesson-locked{
+    opacity:.55;
+    cursor:not-allowed;
+    user-select:none;
+    border-style:dashed;
+    background:color-mix(in srgb,var(--surface-2) 82%,transparent);
+}
+.learning-player-lessons .learning-player-lesson-locked:hover{
+    background:color-mix(in srgb,var(--surface-2) 82%,transparent);
+    border-color:var(--border);
+    transform:none;
+}
+.learning-player-lessons .learning-player-lesson-locked h3,
+.learning-player-lessons .learning-player-lesson-locked p{
+    color:var(--text-soft) !important;
+}
+.learning-sequential-warning{
+    margin:0 0 14px;
+    padding:11px 13px;
+    border:1px solid color-mix(in srgb,var(--warning) 38%,var(--border));
+    border-radius:12px;
+    background:color-mix(in srgb,var(--warning) 10%,var(--surface));
+    color:var(--text);
+    font-size:12px;
+    font-weight:750;
+}

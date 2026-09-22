@@ -316,13 +316,100 @@ class Learning
         $detalle=$this->detalleAsignacionBase($idAsignacion,$idUsuario);
         if (!$detalle) return;
 
+        // V3.2.1: el progreso academico vive en learning_progreso_lecciones.
+        // Ya no se sincroniza desde video_progreso, porque ver un video fuera de una
+        // capacitacion no debe completar automaticamente una leccion del curso.
         $stmt=$this->conexion->prepare("INSERT IGNORE INTO learning_progreso_lecciones (id_asignacion,id_leccion) SELECT :asig,l.id_leccion FROM learning_curso_lecciones l WHERE l.id_curso=:curso");
         $stmt->execute([':asig'=>$idAsignacion, ':curso'=>$detalle['id_curso']]);
 
-        $sync=$this->conexion->prepare("UPDATE learning_progreso_lecciones pl INNER JOIN learning_curso_lecciones l ON l.id_leccion=pl.id_leccion LEFT JOIN video_progreso vp ON vp.id_video=l.id_video AND vp.id_usuario=:usuario SET pl.porcentaje=COALESCE(vp.porcentaje,pl.porcentaje), pl.estado=CASE WHEN COALESCE(vp.porcentaje,pl.porcentaje)>=90 THEN 'completada' WHEN COALESCE(vp.porcentaje,pl.porcentaje)>0 THEN 'en_progreso' ELSE pl.estado END, pl.fecha_inicio=CASE WHEN COALESCE(vp.porcentaje,0)>0 AND pl.fecha_inicio IS NULL THEN NOW() ELSE pl.fecha_inicio END, pl.fecha_completado=CASE WHEN COALESCE(vp.porcentaje,pl.porcentaje)>=90 AND pl.fecha_completado IS NULL THEN NOW() ELSE pl.fecha_completado END WHERE pl.id_asignacion=:asig");
-        $sync->execute([':usuario'=>$idUsuario, ':asig'=>$idAsignacion]);
+        $sync=$this->conexion->prepare("UPDATE learning_progreso_lecciones SET estado=CASE WHEN porcentaje>=90 THEN 'completada' WHEN porcentaje>0 THEN 'en_progreso' ELSE 'pendiente' END, fecha_inicio=CASE WHEN porcentaje>0 AND fecha_inicio IS NULL THEN NOW() ELSE fecha_inicio END, fecha_completado=CASE WHEN porcentaje>=90 AND fecha_completado IS NULL THEN NOW() WHEN porcentaje<90 THEN NULL ELSE fecha_completado END WHERE id_asignacion=:asig");
+        $sync->execute([':asig'=>$idAsignacion]);
 
         $this->actualizarEstadoAsignacion($idAsignacion,$idUsuario);
+    }
+
+    public function progresoLeccionAsignacion(int $idAsignacion, int $idVideo, int $idUsuario): ?array
+    {
+        $detalle=$this->detalleAsignacionBase($idAsignacion,$idUsuario);
+        if (!$detalle) return null;
+
+        $this->sincronizarProgresoAsignacion($idAsignacion,$idUsuario);
+        $sql="SELECT pl.*,l.id_video,l.obligatoria,l.orden FROM learning_progreso_lecciones pl INNER JOIN learning_curso_lecciones l ON l.id_leccion=pl.id_leccion WHERE pl.id_asignacion=:asig AND l.id_curso=:curso AND l.id_video=:video LIMIT 1";
+        $stmt=$this->conexion->prepare($sql);
+        $stmt->execute([':asig'=>$idAsignacion, ':curso'=>$detalle['id_curso'], ':video'=>$idVideo]);
+        $row=$stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function guardarProgresoLeccion(int $idAsignacion, int $idVideo, int $idUsuario, int $posicion, int $duracion, bool $finalizado=false): array
+    {
+        $detalle=$this->detalleAsignacionBase($idAsignacion,$idUsuario);
+        if (!$detalle) return ['ok'=>false,'mensaje'=>'Asignacion no valida.'];
+        if ($detalle['fecha_inicio'] > date('Y-m-d')) return ['ok'=>false,'mensaje'=>'La capacitacion aun no ha iniciado.'];
+        if ($detalle['estado']==='vencida' || $detalle['fecha_limite'] < date('Y-m-d')) return ['ok'=>false,'mensaje'=>'La capacitacion esta vencida.'];
+
+        $progreso=$this->progresoLeccionAsignacion($idAsignacion,$idVideo,$idUsuario);
+        if (!$progreso) return ['ok'=>false,'mensaje'=>'El video no pertenece a esta capacitacion.'];
+
+        // V3.2.1 hotfix: en cursos secuenciales no se acepta progreso de una
+        // leccion futura mientras exista una leccion obligatoria anterior pendiente.
+        if (!empty($detalle['orden_secuencial'])) {
+            $bloqueo=$this->conexion->prepare("SELECT COUNT(*) FROM learning_curso_lecciones anterior LEFT JOIN learning_progreso_lecciones pa ON pa.id_leccion=anterior.id_leccion AND pa.id_asignacion=:asig WHERE anterior.id_curso=:curso AND anterior.obligatoria=1 AND (anterior.orden < :orden OR (anterior.orden = :orden2 AND anterior.id_leccion < :leccion)) AND COALESCE(pa.estado,'pendiente') <> 'completada'");
+            $bloqueo->execute([
+                ':asig'=>$idAsignacion,
+                ':curso'=>$detalle['id_curso'],
+                ':orden'=>(int)$progreso['orden'],
+                ':orden2'=>(int)$progreso['orden'],
+                ':leccion'=>(int)$progreso['id_leccion'],
+            ]);
+            if ((int)$bloqueo->fetchColumn() > 0) {
+                return ['ok'=>false,'mensaje'=>'Completa la leccion anterior antes de continuar.'];
+            }
+        }
+
+        $posicion=max(0,$posicion);
+        $duracion=max(0,$duracion);
+        $maxAnterior=(int)($progreso['max_posicion_segundos'] ?? 0);
+        $completada=($progreso['estado'] ?? '')==='completada';
+
+        // Defensa de servidor frente a saltos artificiales. El navegador bloquea el
+        // seek; aqui limitamos ademas avances bruscos enviados directamente al API.
+        if (!$completada && $posicion > ($maxAnterior + 45)) {
+            $posicion=$maxAnterior;
+        }
+
+        $nuevoMax=max($maxAnterior,$posicion);
+        if ($finalizado && $duracion>0 && ($duracion-$nuevoMax)<=20) {
+            $nuevoMax=$duracion;
+            $posicion=$duracion;
+        }
+
+        $porcentaje=$duracion>0 ? min(100,round(($nuevoMax/$duracion)*100,2)) : (float)($progreso['porcentaje'] ?? 0);
+        if ($completada) $porcentaje=max(90,$porcentaje);
+        $estado=$porcentaje>=90 ? 'completada' : ($porcentaje>0 ? 'en_progreso' : 'pendiente');
+
+        $sql="UPDATE learning_progreso_lecciones SET posicion_segundos=:posicion,duracion_segundos=:duracion,max_posicion_segundos=:maximo,porcentaje=:porcentaje,estado=:estado,fecha_inicio=CASE WHEN :porcentaje_inicio>0 AND fecha_inicio IS NULL THEN NOW() ELSE fecha_inicio END,fecha_completado=CASE WHEN :porcentaje_fin>=90 THEN COALESCE(fecha_completado,NOW()) ELSE NULL END WHERE id_progreso_leccion=:id";
+        $stmt=$this->conexion->prepare($sql);
+        $ok=$stmt->execute([
+            ':posicion'=>$posicion,
+            ':duracion'=>$duracion,
+            ':maximo'=>$nuevoMax,
+            ':porcentaje'=>$porcentaje,
+            ':estado'=>$estado,
+            ':porcentaje_inicio'=>$porcentaje,
+            ':porcentaje_fin'=>$porcentaje,
+            ':id'=>$progreso['id_progreso_leccion'],
+        ]);
+
+        if ($ok) $this->actualizarEstadoAsignacion($idAsignacion,$idUsuario);
+        return [
+            'ok'=>$ok,
+            'porcentaje'=>$porcentaje,
+            'posicion'=>$posicion,
+            'max_posicion'=>$nuevoMax,
+            'estado'=>$estado,
+            'completada'=>$estado==='completada',
+        ];
     }
 
     private function actualizarEstadoAsignacion(int $idAsignacion, int $idUsuario): void
@@ -408,7 +495,7 @@ class Learning
         $this->sincronizarProgresoAsignacion($idAsignacion,$idUsuario);
         $detalle=$this->detalleAsignacionBase($idAsignacion,$idUsuario);
         if (!$detalle) return [];
-        $sql="SELECT l.id_leccion,l.id_video,l.orden,l.obligatoria,COALESCE(NULLIF(l.titulo_personalizado,''),v.titulo) titulo,l.descripcion,v.miniatura,v.titulo titulo_video,COALESCE(pl.estado,'pendiente') progreso_estado,COALESCE(pl.porcentaje,0) porcentaje,pl.fecha_completado FROM learning_curso_lecciones l INNER JOIN videos v ON v.id_video=l.id_video LEFT JOIN learning_progreso_lecciones pl ON pl.id_leccion=l.id_leccion AND pl.id_asignacion=:asig WHERE l.id_curso=:curso ORDER BY l.orden,l.id_leccion";
+        $sql="SELECT l.id_leccion,l.id_video,l.orden,l.obligatoria,COALESCE(NULLIF(l.titulo_personalizado,''),v.titulo) titulo,l.descripcion,v.miniatura,v.titulo titulo_video,COALESCE(pl.estado,'pendiente') progreso_estado,COALESCE(pl.porcentaje,0) porcentaje,COALESCE(pl.posicion_segundos,0) posicion_segundos,COALESCE(pl.duracion_segundos,0) duracion_segundos,COALESCE(pl.max_posicion_segundos,0) max_posicion_segundos,pl.fecha_completado FROM learning_curso_lecciones l INNER JOIN videos v ON v.id_video=l.id_video LEFT JOIN learning_progreso_lecciones pl ON pl.id_leccion=l.id_leccion AND pl.id_asignacion=:asig WHERE l.id_curso=:curso ORDER BY l.orden,l.id_leccion";
         $stmt=$this->conexion->prepare($sql); $stmt->execute([':asig'=>$idAsignacion, ':curso'=>$detalle['id_curso']]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -420,8 +507,8 @@ class Learning
         $detalle=$this->detalleAsignacionBase($idAsignacion,$idUsuario);
         if (!$detalle || $detalle['estado'] === 'vencida' || $detalle['fecha_inicio'] > date('Y-m-d')) return false;
 
-        $stmt=$this->conexion->prepare("SELECT COALESCE(vp.porcentaje,0) porcentaje FROM learning_curso_lecciones l LEFT JOIN video_progreso vp ON vp.id_video=l.id_video AND vp.id_usuario=:usuario WHERE l.id_leccion=:leccion AND l.id_curso=:curso LIMIT 1");
-        $stmt->execute([':usuario'=>$idUsuario, ':leccion'=>$idLeccion, ':curso'=>$detalle['id_curso']]);
+        $stmt=$this->conexion->prepare("SELECT COALESCE(pl.porcentaje,0) porcentaje FROM learning_curso_lecciones l LEFT JOIN learning_progreso_lecciones pl ON pl.id_leccion=l.id_leccion AND pl.id_asignacion=:asig WHERE l.id_leccion=:leccion AND l.id_curso=:curso LIMIT 1");
+        $stmt->execute([':asig'=>$idAsignacion, ':leccion'=>$idLeccion, ':curso'=>$detalle['id_curso']]);
         $porcentaje=(float)($stmt->fetchColumn() ?: 0);
         if ($porcentaje < 90) return false;
 
