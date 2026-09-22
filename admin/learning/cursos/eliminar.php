@@ -1,0 +1,2 @@
+<?php
+require_once '../../../config/sesion.php'; verificarAdmin(); if($_SERVER['REQUEST_METHOD']!=='POST'){http_response_code(405);exit;} verificarCsrfPost(); require_once '../../../controllers/LearningController.php'; $learning=new LearningController(); $ok=$learning->eliminarCurso((int)($_POST['id']??0)); $msg=$ok?'Curso eliminado.':'No se puede eliminar: tiene capacitaciones asociadas.'; header('Location:listar.php?msg='.urlencode($msg)); exit;

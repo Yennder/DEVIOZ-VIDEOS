@@ -1,0 +1,25 @@
+TECHFLIX V3 - TRANSCRIPCION LOCAL
+
+ORDEN RECOMENDADO
+
+1. Instala Python para Windows y marca la opcion Add Python to PATH.
+2. Opcional pero recomendado: instala FFmpeg y agrega ffmpeg.exe al PATH.
+3. En este directorio ejecuta INSTALAR_TRANSCRIPCION.bat.
+4. En phpMyAdmin importa database/migracion_transcripcion_v3.sql.
+5. Ejecuta PROBAR_ENTORNO.bat y revisa que MySQL y la migracion indiquen OK.
+6. Ejecuta INICIAR_WORKER.bat y deja la ventana abierta.
+7. En DEVIOZ VIDEOS entra como administrador > Transcripciones.
+8. Encola primero UN video corto de Docker.
+9. El primer trabajo puede tardar mas porque faster-whisper descargara el modelo small.
+10. Cuando el estado sea Completada, abre el video publico y prueba:
+    - subtitulos CC
+    - panel de transcripcion
+    - DEVIOZ AI > Este video
+
+NOTAS
+
+- No se transcribe el video cada vez que alguien lo reproduce.
+- Una vez procesado, la transcripcion queda guardada en MySQL.
+- El archivo VTT queda en uploads/subtitulos.
+- El modo por defecto usa CPU + int8 para ser compatible con mas equipos.
+- Si tienes una GPU NVIDIA compatible, luego puedes cambiar el worker a cuda/float16.

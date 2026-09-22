@@ -1,0 +1,16 @@
+TECHFLIX V3 - IMPORTANTE
+
+Esta version NO reemplaza tu base de datos actual.
+
+1. Conserva tu base devioz_videos actual.
+2. En phpMyAdmin selecciona devioz_videos.
+3. Importa SOLO:
+   database/migracion_transcripcion_v3.sql
+4. No importes database/devioz_videos.sql sobre tu base actual.
+
+La migracion agrega:
+- video_transcripciones
+- video_transcripcion_segmentos
+- transcripcion_trabajos
+
+No contiene DROP TABLE ni DROP DATABASE.

@@ -1,0 +1,749 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+/* =========================================
+   RESET
+========================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body{
+    width:100%;
+    min-height:100%;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#050505;
+    color:#fff;
+    overflow:hidden;
+}
+
+/* =========================================
+   CONTENEDOR GENERAL
+========================================= */
+
+.login-page{
+    position:relative;
+    width:100%;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:30px;
+    overflow:hidden;
+    background:
+        radial-gradient(
+            circle at top,
+            rgba(0,229,255,.08),
+            transparent 35%
+        ),
+        #050505;
+}
+
+/* =========================================
+   LUCES DE FONDO
+========================================= */
+
+.login-glow{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(120px);
+    opacity:.18;
+    pointer-events:none;
+}
+
+.glow-one{
+    width:450px;
+    height:450px;
+    background:#00e5ff;
+    top:-180px;
+    left:-130px;
+}
+
+.glow-two{
+    width:380px;
+    height:380px;
+    background:#00b8cc;
+    right:-130px;
+    bottom:-160px;
+}
+
+/* =========================================
+   TARJETA LOGIN
+========================================= */
+
+.login-container{
+    position:relative;
+    z-index:2;
+    width:100%;
+    max-width:440px;
+    padding:42px 38px;
+    background:rgba(17,17,17,.92);
+    border:1px solid rgba(0,229,255,.18);
+    border-radius:22px;
+    box-shadow:
+        0 25px 80px rgba(0,0,0,.55),
+        0 0 45px rgba(0,229,255,.05);
+    backdrop-filter:blur(12px);
+    animation:loginEntrada .45s ease;
+}
+
+/* =========================================
+   MARCA
+========================================= */
+
+.login-brand{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    margin-bottom:30px;
+}
+
+.login-brand-icon{
+    width:45px;
+    height:45px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    border-radius:12px;
+    background:#00e5ff;
+    color:#000;
+    font-size:18px;
+    box-shadow:0 0 25px rgba(0,229,255,.22);
+}
+
+.logo-login{
+    width:100%;
+    height:90px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin-bottom:20px;
+    overflow:hidden;
+}
+
+.logo-login img{
+    display:block;
+    width:auto !important;
+    height:auto !important;
+    max-width:240px !important;
+    max-height:78px !important;
+    object-fit:contain;
+    object-position:center;
+}
+
+/* =========================================
+   CABECERA
+========================================= */
+
+.login-heading{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.login-heading h1{
+    font-size:27px;
+    margin-bottom:9px;
+}
+
+.login-heading p{
+    color:#888;
+    font-size:13px;
+    line-height:1.6;
+}
+
+/* =========================================
+   FORMULARIO
+========================================= */
+
+.login-form{
+    width:100%;
+}
+
+.login-field{
+    margin-bottom:20px;
+}
+
+.login-field label{
+    display:block;
+    margin-bottom:8px;
+    color:#ddd;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.input-group{
+    position:relative;
+    display:flex;
+    align-items:center;
+}
+
+.input-group input{
+    width:100%;
+    height:48px;
+    padding:0 48px 0 43px;
+    border:1px solid #303030;
+    border-radius:11px;
+    background:#0b0b0b;
+    color:#fff;
+    outline:none;
+    transition:.25s;
+}
+
+.input-group input::placeholder{
+    color:#666;
+}
+
+.input-group input:focus{
+    border-color:#00e5ff;
+    box-shadow:
+        0 0 0 3px rgba(0,229,255,.08);
+}
+
+.input-icon{
+    position:absolute;
+    left:14px;
+    z-index:2;
+    font-size:14px;
+    pointer-events:none;
+}
+
+.toggle-password{
+    position:absolute;
+    right:10px;
+    width:34px;
+    height:34px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:transparent;
+    border:none;
+    color:#888;
+    cursor:pointer;
+    border-radius:8px;
+    transition:.2s;
+}
+
+.toggle-password:hover{
+    background:#1b1b1b;
+    color:white;
+}
+
+/* =========================================
+   BOTON
+========================================= */
+
+.btn-login{
+    width:100%;
+    height:50px;
+    margin-top:8px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    background:#00e5ff;
+    color:#000;
+    border:none;
+    border-radius:12px;
+    font-weight:800;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.btn-login:hover{
+    background:#fff;
+    transform:translateY(-2px);
+    box-shadow:0 12px 25px rgba(0,229,255,.12);
+}
+
+.btn-login:active{
+    transform:translateY(0);
+}
+
+/* =========================================
+   ERROR
+========================================= */
+
+.error-login{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:12px 14px;
+    margin-bottom:20px;
+    background:rgba(255,68,68,.10);
+    color:#ff8e8e;
+    border:1px solid rgba(255,68,68,.28);
+    border-radius:10px;
+    font-size:13px;
+}
+
+/* =========================================
+   VOLVER AL SITIO
+========================================= */
+
+.login-divider{
+    margin:26px 0 20px;
+}
+
+.login-divider span{
+    display:block;
+    width:100%;
+    height:1px;
+    background:#242424;
+}
+
+.back-public{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#aaa;
+    font-size:13px;
+    transition:.2s;
+}
+
+.back-public:hover{
+    color:#00e5ff;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.login-footer{
+    margin-top:24px;
+    text-align:center;
+    color:#555;
+    font-size:11px;
+}
+
+/* =========================================
+   ANIMACION
+========================================= */
+
+@keyframes loginEntrada{
+
+    from{
+        opacity:0;
+        transform:translateY(14px) scale(.98);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media(max-width:550px){
+
+    .login-page{
+        padding:18px;
+    }
+
+    .login-container{
+        padding:34px 23px;
+    }
+
+    .logo-login{
+        height:75px;
+    }
+
+    .logo-login img{
+        max-width:205px !important;
+        max-height:65px !important;
+    }
+
+    .login-heading h1{
+        font-size:24px;
+    }
+}
+
+/* =========================================
+   REGISTRO PUBLICO
+========================================= */
+
+.registro-login-link{
+
+    text-align:center;
+
+    color:#888;
+
+    font-size:13px;
+
+    margin-bottom:18px;
+
+}
+
+
+.registro-login-link a{
+
+    color:#00cfe8;
+
+    font-weight:bold;
+
+    margin-left:5px;
+
+}
+
+
+.registro-login-link a:hover{
+
+    color:#ffffff;
+
+}
+
+/* =========================================
+   MENSAJE EXITO
+========================================= */
+
+.success-login{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:9px;
+
+    padding:12px 14px;
+
+    margin-bottom:20px;
+
+    background:rgba(40,167,69,.12);
+
+    color:#7ee2a8;
+
+    border:1px solid rgba(40,167,69,.28);
+
+    border-radius:10px;
+
+    font-size:13px;
+
+}
+
+
+/* =========================================
+   RECUPERAR PASSWORD
+========================================= */
+
+.forgot-password-link{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    margin-top:-8px;
+
+    margin-bottom:18px;
+
+}
+
+
+.forgot-password-link a{
+
+    color:#00cfe8;
+
+    font-size:12px;
+
+    font-weight:bold;
+
+}
+
+
+.forgot-password-link a:hover{
+
+    color:#ffffff;
+
+}
+
+
+.recovery-demo-link{
+
+    text-align:center;
+
+    color:#888;
+
+    font-size:13px;
+
+}
+
+
+.recovery-demo-link p{
+
+    margin-bottom:10px;
+
+}
+
+
+.recovery-demo-link a{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:11px 18px;
+
+    background:#00cfe8;
+
+    color:#082129;
+
+    border-radius:10px;
+
+    font-weight:bold;
+
+}
+
+/* =========================================
+   PERFIL PUBLICO
+========================================= */
+
+.perfil-container{
+    max-width:500px;
+}
+
+
+.perfil-info-box{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:25px;
+}
+
+
+.perfil-info-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:12px;
+
+    background:#0b0b0b;
+
+    border:1px solid #2a2a2a;
+
+    border-radius:10px;
+}
+
+
+.perfil-info-item > span{
+    font-size:20px;
+}
+
+
+.perfil-info-item div{
+    min-width:0;
+}
+
+
+.perfil-info-item small{
+    display:block;
+
+    color:#777;
+
+    font-size:10px;
+
+    margin-bottom:3px;
+}
+
+
+.perfil-info-item strong{
+    display:block;
+
+    color:#fff;
+
+    font-size:12px;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+
+.perfil-actions{
+    display:flex;
+    flex-direction:column;
+
+    gap:10px;
+
+    margin-top:22px;
+}
+
+
+.perfil-action-button{
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    padding:12px;
+
+    background:#00cfe8;
+
+    color:#082129;
+
+    border-radius:10px;
+
+    font-size:13px;
+    font-weight:bold;
+
+    transition:.2s;
+}
+
+
+.perfil-action-button:hover{
+    background:#fff;
+
+    color:#111820;
+}
+
+
+.perfil-action-button.secondary{
+    background:#202020;
+
+    color:#ccc;
+
+    border:1px solid #333;
+}
+
+
+.perfil-action-button.secondary:hover{
+    border-color:#00cfe8;
+
+    color:#00cfe8;
+}
+
+
+@media(max-width:500px){
+
+    .perfil-info-box{
+        grid-template-columns:1fr;
+    }
+
+}
+/* =========================================================
+   DEVIOZ VIDEOS 2026 - AUTH / PROFILE REFRESH
+========================================================= */
+
+:root{
+    --auth-bg:#0b1218;
+    --auth-surface:#141e27;
+    --auth-surface-2:#192631;
+    --auth-border:#2b3a45;
+    --auth-text:#e8eff3;
+    --auth-muted:#92a4af;
+    --auth-accent:#1bbdca;
+    --auth-accent-strong:#46d0da;
+}
+
+body{
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--auth-bg);
+    color:var(--auth-text);
+    overflow:auto;
+}
+
+.login-page{
+    min-height:100svh;
+    padding:28px 18px;
+    background:
+        radial-gradient(circle at 15% 10%,rgba(27,189,202,.12),transparent 34%),
+        radial-gradient(circle at 84% 88%,rgba(72,115,145,.11),transparent 38%),
+        var(--auth-bg);
+}
+
+.glow-one,.glow-two{opacity:.12;filter:blur(150px);}
+.login-container{
+    max-width:460px;
+    padding:36px 34px;
+    background:rgba(20,30,39,.96);
+    border:1px solid var(--auth-border);
+    border-radius:18px;
+    box-shadow:0 28px 80px rgba(0,0,0,.32);
+    backdrop-filter:blur(10px);
+}
+.login-container.perfil-container{max-width:680px;}
+
+.login-brand{margin-bottom:24px;}
+.auth-brand-fallback{display:flex;justify-content:center;align-items:center;gap:12px;color:var(--auth-text);}
+.auth-brand-fallback .auth-brand-mark{
+    width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+    background:var(--auth-accent);color:#092128;font-weight:900;letter-spacing:-.04em;
+}
+.auth-brand-fallback strong{font-size:14px;letter-spacing:.06em;}
+.auth-brand-fallback small{display:block;color:var(--auth-muted);font-size:9px;letter-spacing:.16em;margin-top:2px;}
+.logo-login{height:72px;margin-bottom:12px;}
+.logo-login img{max-height:64px!important;max-width:220px!important;}
+
+.login-heading{margin-bottom:24px;}
+.login-heading h1{font-size:26px;letter-spacing:-.035em;color:var(--auth-text);}
+.login-heading p{color:var(--auth-muted);font-size:12px;}
+.login-field{margin-bottom:16px;}
+.login-field label{color:#cfd9de;font-size:11px;letter-spacing:.02em;}
+.input-group input,.input-group select,.login-field input,.login-field textarea{
+    background:var(--auth-surface-2);border:1px solid var(--auth-border);color:var(--auth-text);
+    border-radius:10px;min-height:46px;
+}
+.input-group input:focus,.login-field input:focus,.login-field textarea:focus{
+    border-color:rgba(27,189,202,.75);box-shadow:0 0 0 3px rgba(27,189,202,.10);outline:none;
+}
+.input-icon{color:#78909d;}
+.login-button,.perfil-action-button{
+    background:var(--auth-accent);color:#08242a;border-radius:10px;min-height:45px;
+    font-weight:850;box-shadow:none;
+}
+.login-button:hover,.perfil-action-button:hover{background:var(--auth-accent-strong);color:#071b20;transform:translateY(-1px);}
+.login-links a,.back-link a{color:#55d2dc;}
+.error-login,.success-login{border-radius:10px;font-size:11px;padding:11px 13px;}
+.error-login{background:#351e24;border:1px solid #5a323a;color:#f0a9b0;}
+.success-login{background:#143229;border:1px solid #285440;color:#91e3c0;}
+
+.perfil-info-box{gap:10px;}
+.perfil-info-item{
+    background:var(--auth-surface-2);border:1px solid var(--auth-border);border-radius:12px;padding:13px;
+}
+.perfil-info-item small{color:var(--auth-muted);}
+.perfil-info-item strong{color:var(--auth-text);font-size:12px;}
+.perfil-actions{gap:9px;}
+.perfil-action-button.secondary{background:var(--auth-surface-2);color:#cfdae0;border:1px solid var(--auth-border);}
+.perfil-action-button.secondary:hover{border-color:var(--auth-accent);color:#63d7df;background:#182a34;}
+.perfil-activity-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0;}
+.perfil-activity-card{
+    display:block;padding:14px 10px;background:var(--auth-surface-2);border:1px solid var(--auth-border);
+    border-radius:12px;text-align:center;color:var(--auth-text);transition:.18s ease;
+}
+.perfil-activity-card:hover{border-color:rgba(27,189,202,.55);transform:translateY(-1px);}
+.perfil-activity-card strong{display:block;color:#6fdae2;font-size:20px;margin-bottom:3px;}
+.perfil-activity-card span{font-size:9px;color:var(--auth-muted);text-transform:uppercase;letter-spacing:.07em;}
+
+@media(max-width:620px){
+    .login-container{padding:28px 20px;border-radius:15px;}
+    .login-heading h1{font-size:23px;}
+    .perfil-activity-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+
+/* Fallback de marca usado cuando una instalación limpia no tiene logo cargado. */
+.auth-brand-symbol{
+    width:44px;height:44px;display:grid;place-items:center;border-radius:12px;
+    background:var(--auth-accent);color:#08242a;font-weight:900;letter-spacing:-.04em;
+}
+.auth-brand-copy{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05;}
+.auth-brand-copy strong{color:var(--auth-text);font-size:15px;letter-spacing:.08em;}
+.auth-brand-copy small{color:var(--auth-muted);font-size:9px;letter-spacing:.20em;margin-top:5px;}
+.btn-login{background:var(--auth-accent)!important;color:#08242a!important;border:0!important;border-radius:10px!important;min-height:45px!important;font-weight:850!important;box-shadow:none!important;transition:.18s ease!important}.btn-login:hover{background:var(--auth-accent-strong)!important;transform:translateY(-1px)!important}
+.profile-library-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:16px 0 22px}.profile-library-stats a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:72px;padding:10px;background:var(--auth-surface-2);border:1px solid var(--auth-border);border-radius:11px;color:var(--auth-text);transition:.18s ease}.profile-library-stats a:hover{border-color:rgba(27,189,202,.55);transform:translateY(-1px)}.profile-library-stats strong{font-size:18px;color:#68d9e1}.profile-library-stats span{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--auth-muted);margin-top:3px}@media(max-width:520px){.profile-library-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Tipografía unificada V2 */
+html,body,button,input,select,textarea{
+    font-family:"Manrope","Segoe UI",Arial,sans-serif !important;
+}

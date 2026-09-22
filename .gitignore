@@ -1,0 +1,32 @@
+# Multimedia cargada en tiempo de ejecución
+uploads/videos/*
+!uploads/videos/.gitkeep
+
+uploads/thumbnails/*
+!uploads/thumbnails/.gitkeep
+
+uploads/series/*
+!uploads/series/.gitkeep
+
+uploads/config/*
+!uploads/config/.gitkeep
+
+uploads/subtitulos/*.vtt
+
+# Variables de entorno / credenciales
+.env
+.env.*
+!.env.example
+
+# Archivos locales / temporales
+*.log
+.DS_Store
+Thumbs.db
+
+# Python
+python/transcripcion/.venv/
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/

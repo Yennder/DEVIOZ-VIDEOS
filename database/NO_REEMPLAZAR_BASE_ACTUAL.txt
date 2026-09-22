@@ -1,0 +1,5 @@
+NO REEMPLACES TU BASE ACTUAL.
+
+Esta V3 fue preparada para continuar sobre tu base devioz_videos existente.
+Importa solamente migracion_transcripcion_v3.sql.
+Conserva tu propio respaldo SQL actualizado por separado.

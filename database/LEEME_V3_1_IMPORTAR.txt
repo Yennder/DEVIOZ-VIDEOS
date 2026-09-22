@@ -1,0 +1,10 @@
+TECHFLIX V3.1
+
+NO reemplaces tu base devioz_videos.
+NO importes nuevamente un dump completo.
+
+En phpMyAdmin selecciona devioz_videos e importa SOLO:
+
+migracion_v3_1_interacciones.sql
+
+Esta migracion agrega soporte para respuestas a comentarios y no elimina tus datos.
