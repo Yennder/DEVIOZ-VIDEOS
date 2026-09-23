@@ -4375,3 +4375,37 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
+// =========================================
+// TECHFLIX V3.2.3 - CENTRO DE NOTIFICACIONES
+// =========================================
+document.addEventListener('DOMContentLoaded', function () {
+    const center = document.getElementById('notificationCenter');
+    const bell = document.getElementById('notificationBell');
+    const dropdown = document.getElementById('notificationDropdown');
+    if (!center || !bell || !dropdown) return;
+
+    function closeNotifications() {
+        dropdown.hidden = true;
+        bell.setAttribute('aria-expanded', 'false');
+    }
+
+    bell.addEventListener('click', function (event) {
+        event.stopPropagation();
+        const open = dropdown.hidden;
+        dropdown.hidden = !open;
+        bell.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    dropdown.addEventListener('click', function (event) {
+        event.stopPropagation();
+    });
+
+    document.addEventListener('click', function () {
+        closeNotifications();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') closeNotifications();
+    });
+});

@@ -1,15 +1,18 @@
 <?php
 
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/Notificacion.php';
 
 class Learning
 {
     private PDO $conexion;
+    private Notificacion $notificaciones;
 
     public function __construct()
     {
         $db = new Conexion();
         $this->conexion = $db->conectar();
+        $this->notificaciones = new Notificacion($this->conexion);
     }
 
     private function texto($valor, int $max = 0): string
@@ -219,9 +222,31 @@ class Learning
 
     private function asignarUsuariosInterno(int $idCapacitacion, array $usuarios): void
     {
+        $capStmt = $this->conexion->prepare("SELECT cap.nombre,cap.fecha_limite,c.titulo AS curso FROM learning_capacitaciones cap INNER JOIN learning_cursos c ON c.id_curso=cap.id_curso WHERE cap.id_capacitacion=:id LIMIT 1");
+        $capStmt->execute([':id'=>$idCapacitacion]);
+        $capacitacion = $capStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
         $stmt = $this->conexion->prepare("INSERT IGNORE INTO learning_asignaciones (id_capacitacion,id_usuario) VALUES (:cap,:usuario)");
         foreach (array_unique(array_map('intval',$usuarios)) as $idUsuario) {
-            if ($idUsuario > 0) $stmt->execute([':cap'=>$idCapacitacion, ':usuario'=>$idUsuario]);
+            if ($idUsuario <= 0) continue;
+            $stmt->execute([':cap'=>$idCapacitacion, ':usuario'=>$idUsuario]);
+            if ($stmt->rowCount() > 0) {
+                $idAsignacion = (int)$this->conexion->lastInsertId();
+                $fecha = !empty($capacitacion['fecha_limite']) ? date('d/m/Y', strtotime($capacitacion['fecha_limite'])) : '';
+                $mensaje = 'Se te asignó ' . ($capacitacion['nombre'] ?? 'una nueva capacitación');
+                if (!empty($capacitacion['curso'])) $mensaje .= ' del curso ' . $capacitacion['curso'];
+                if ($fecha !== '') $mensaje .= '. Fecha límite: ' . $fecha;
+                $mensaje .= '.';
+                $this->notificaciones->crear(
+                    $idUsuario,
+                    'capacitacion_asignada',
+                    'Nueva capacitación asignada',
+                    $mensaje,
+                    '/DEVIOZ-VIDEOS/public/curso.php?id_asignacion=' . $idAsignacion,
+                    '🎓',
+                    'cap_asignada:' . $idAsignacion
+                );
+            }
         }
     }
 
@@ -236,11 +261,33 @@ class Learning
         $limite = (string)($datos['fecha_limite'] ?? '');
         if (!$inicio || !$limite || $limite < $inicio) return false;
         $estado = in_array(($datos['estado'] ?? ''), ['planificada','activa','cerrada'], true) ? $datos['estado'] : 'activa';
+
+        $anteriorStmt=$this->conexion->prepare("SELECT nombre,fecha_limite FROM learning_capacitaciones WHERE id_capacitacion=:id LIMIT 1");
+        $anteriorStmt->execute([':id'=>$idCapacitacion]);
+        $anterior=$anteriorStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
         $stmt = $this->conexion->prepare("UPDATE learning_capacitaciones SET nombre=:nombre, descripcion=:descripcion, fecha_inicio=:inicio, fecha_limite=:limite, estado=:estado WHERE id_capacitacion=:id");
-        return $stmt->execute([
+        $ok=$stmt->execute([
             ':nombre'=>$this->texto($datos['nombre'] ?? '',180), ':descripcion'=>$this->texto($datos['descripcion'] ?? ''),
             ':inicio'=>$inicio, ':limite'=>$limite, ':estado'=>$estado, ':id'=>$idCapacitacion
         ]);
+
+        if ($ok && !empty($anterior) && ($anterior['fecha_limite'] ?? '') !== $limite) {
+            $usuarios=$this->conexion->prepare("SELECT id_asignacion,id_usuario FROM learning_asignaciones WHERE id_capacitacion=:cap AND estado IN ('pendiente','en_progreso')");
+            $usuarios->execute([':cap'=>$idCapacitacion]);
+            foreach ($usuarios->fetchAll(PDO::FETCH_ASSOC) as $a) {
+                $this->notificaciones->crear(
+                    (int)$a['id_usuario'],
+                    'fecha_actualizada',
+                    'Fecha límite actualizada',
+                    'La fecha límite de ' . ($datos['nombre'] ?? $anterior['nombre'] ?? 'tu capacitación') . ' cambió al ' . date('d/m/Y',strtotime($limite)) . '.',
+                    '/DEVIOZ-VIDEOS/public/curso.php?id_asignacion=' . (int)$a['id_asignacion'],
+                    '📅',
+                    'cap_fecha:' . (int)$a['id_asignacion'] . ':' . $limite
+                );
+            }
+        }
+        return $ok;
     }
 
     public function listarCapacitacionesAdmin(): array
@@ -438,8 +485,34 @@ class Learning
         if ($todasLecciones && $eval && $aprobado) {
             $u=$this->conexion->prepare("UPDATE learning_asignaciones SET estado='completada', fecha_inicio_real=COALESCE(fecha_inicio_real,NOW()), fecha_completado=COALESCE(fecha_completado,NOW()) WHERE id_asignacion=:id");
             $u->execute([':id'=>$idAsignacion]);
+            $this->notificaciones->crear(
+                $idUsuario,
+                'capacitacion_completada',
+                'Capacitación completada',
+                'Completaste ' . ($detalle['capacitacion'] ?? 'la capacitación') . ' y aprobaste su evaluación.',
+                '/DEVIOZ-VIDEOS/public/curso.php?id_asignacion=' . $idAsignacion,
+                '✅',
+                'cap_completada:' . $idAsignacion
+            );
             $this->evaluarLogrosUsuario($idUsuario,$idAsignacion);
             return;
+        }
+
+        if ($todasLecciones && $eval && !$aprobado) {
+            $intentosStmt=$this->conexion->prepare("SELECT COUNT(*) FROM learning_intentos WHERE id_asignacion=:a AND id_evaluacion=:e");
+            $intentosStmt->execute([':a'=>$idAsignacion,':e'=>$eval['id_evaluacion']]);
+            $intentosUsados=(int)$intentosStmt->fetchColumn();
+            if ($intentosUsados < (int)$eval['intentos_permitidos']) {
+                $this->notificaciones->crear(
+                    $idUsuario,
+                    'evaluacion_disponible',
+                    'Evaluación disponible',
+                    'Ya completaste las lecciones de ' . ($detalle['capacitacion'] ?? 'tu capacitación') . '. Puedes rendir la evaluación final.',
+                    '/DEVIOZ-VIDEOS/public/evaluacion.php?id_asignacion=' . $idAsignacion,
+                    '📝',
+                    'eval_disponible:' . $idAsignacion . ':' . (int)$eval['id_evaluacion']
+                );
+            }
         }
 
         // Si la fecha venció sin cumplir videos + examen, la asignación queda vencida,
@@ -716,6 +789,27 @@ class Learning
             }
             $this->conexion->commit();
         } catch (Throwable $e) { if ($this->conexion->inTransaction()) $this->conexion->rollBack(); throw $e; }
+        if ($aprobado) {
+            $this->notificaciones->crear(
+                $idUsuario,
+                'capacitacion_completada',
+                'Capacitación completada',
+                'Aprobaste la evaluación de ' . ($detalle['capacitacion'] ?? $detalle['curso'] ?? 'tu capacitación') . ' con ' . round($porcentaje,1) . '%.',
+                '/DEVIOZ-VIDEOS/public/curso.php?id_asignacion=' . $idAsignacion,
+                '✅',
+                'cap_completada:' . $idAsignacion
+            );
+        } elseif ($numero >= (int)$eval['intentos_permitidos']) {
+            $this->notificaciones->crear(
+                $idUsuario,
+                'evaluacion_agotada',
+                'Intentos de evaluación agotados',
+                'Agotaste los intentos de ' . ($detalle['capacitacion'] ?? $detalle['curso'] ?? 'la capacitación') . '. Ya puedes revisar tus respuestas.',
+                '/DEVIOZ-VIDEOS/public/evaluacion.php?id_asignacion=' . $idAsignacion,
+                '📋',
+                'eval_agotada:' . $idAsignacion . ':' . (int)$eval['id_evaluacion']
+            );
+        }
         $nuevos=$this->evaluarLogrosUsuario($idUsuario,$idAsignacion);
         return ['porcentaje'=>$porcentaje,'aprobado'=>$aprobado,'numero_intento'=>$numero,'nota_minima'=>(float)$eval['nota_minima'],'nuevos_logros'=>$nuevos];
     }
@@ -765,7 +859,18 @@ class Learning
             }
             if ($cumple) {
                 $ins->execute([':u'=>$idUsuario,':l'=>$l['id_logro'],':a'=>$idAsignacion]);
-                if ($ins->rowCount()>0) $nuevos[]=$l;
+                if ($ins->rowCount()>0) {
+                    $nuevos[]=$l;
+                    $this->notificaciones->crear(
+                        $idUsuario,
+                        'logro_obtenido',
+                        'Nuevo logro desbloqueado',
+                        'Obtuviste el logro: ' . $l['nombre'] . '.',
+                        '/DEVIOZ-VIDEOS/public/logros.php',
+                        $l['icono'] ?: '🏅',
+                        'logro:' . (int)$l['id_logro']
+                    );
+                }
             } else {
                 // Mantiene los logros coherentes si una capacitación deja de cumplir
                 // requisitos (por ejemplo, al publicar un examen final pendiente).

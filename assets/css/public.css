@@ -6975,3 +6975,204 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:"Manrope","Segoe UI
     .learning-review-answers{grid-template-columns:1fr;margin-left:0}
     .learning-review-footer{align-items:stretch;flex-direction:column}
 }
+
+/* =========================================
+   TECHFLIX V3.2.3 - NOTIFICACIONES
+   ========================================= */
+.notification-center{position:relative;display:flex;align-items:center}
+.notification-bell{
+    position:relative;
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:var(--surface-2);
+    color:var(--text);
+    cursor:pointer;
+    transition:.2s ease;
+}
+.notification-bell:hover,.notification-bell[aria-expanded="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.notification-bell>b{
+    position:absolute;
+    top:-6px;
+    right:-6px;
+    min-width:18px;
+    height:18px;
+    padding:0 5px;
+    display:grid;
+    place-items:center;
+    border-radius:999px;
+    background:var(--danger);
+    color:#fff;
+    font-size:8px;
+    line-height:1;
+    box-shadow:0 0 0 3px var(--bg);
+}
+.notification-dropdown{
+    position:absolute;
+    z-index:140;
+    top:calc(100% + 10px);
+    right:0;
+    width:min(380px,calc(100vw - 24px));
+    overflow:hidden;
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:var(--surface);
+    box-shadow:0 18px 50px rgba(0,0,0,.32);
+}
+.notification-dropdown[hidden]{display:none!important}
+.notification-dropdown-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    padding:14px 15px;
+    border-bottom:1px solid var(--border);
+}
+.notification-dropdown-head>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.notification-dropdown-head strong{font-size:12px;color:var(--text)}
+.notification-dropdown-head small{font-size:8px;color:var(--text-soft)}
+.notification-dropdown-head>a{font-size:9px;font-weight:800;color:var(--accent);white-space:nowrap}
+.notification-dropdown-list{max-height:380px;overflow:auto}
+.notification-dropdown-item{margin:0;border-bottom:1px solid var(--border)}
+.notification-dropdown-item:last-child{border-bottom:0}
+.notification-dropdown-item button{
+    width:100%;
+    display:grid;
+    grid-template-columns:34px minmax(0,1fr);
+    gap:10px;
+    align-items:start;
+    padding:12px 14px;
+    border:0;
+    background:transparent;
+    color:inherit;
+    text-align:left;
+    cursor:pointer;
+}
+.notification-dropdown-item button:hover{background:var(--surface-2)}
+.notification-dropdown-icon{
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border-radius:10px;
+    background:var(--accent-soft);
+    font-size:15px;
+}
+.notification-dropdown-item button>span:last-child{display:flex;min-width:0;flex-direction:column;gap:3px}
+.notification-dropdown-item strong{font-size:10px;color:var(--text);line-height:1.35}
+.notification-dropdown-item small{font-size:9px;color:var(--text-soft);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.notification-dropdown-item em{font-size:8px;color:var(--accent);font-style:normal}
+.notification-dropdown-empty{padding:26px 18px;text-align:center;color:var(--text-soft)}
+.notification-dropdown-empty span{display:block;font-size:24px;margin-bottom:6px}
+.notification-dropdown-empty p{margin:0;font-size:10px}
+.notification-dropdown-footer{border-top:1px solid var(--border);padding:9px}
+.notification-dropdown-footer button{
+    width:100%;
+    padding:9px 10px;
+    border:0;
+    border-radius:9px;
+    background:transparent;
+    color:var(--accent);
+    font-size:9px;
+    font-weight:800;
+    cursor:pointer;
+}
+.notification-dropdown-footer button:hover{background:var(--accent-soft)}
+
+.notifications-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+.notifications-hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.notification-total-badge{
+    display:inline-flex;
+    align-items:center;
+    min-height:34px;
+    padding:0 12px;
+    border-radius:999px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:9px;
+    font-weight:900;
+}
+.notifications-list{display:grid;gap:10px}
+.notification-card{
+    display:grid;
+    grid-template-columns:42px minmax(0,1fr) auto;
+    gap:13px;
+    align-items:center;
+    padding:14px 15px;
+    border:1px solid var(--border);
+    border-radius:15px;
+    background:var(--surface);
+    transition:.2s ease;
+}
+.notification-card.is-unread{
+    border-color:color-mix(in srgb,var(--accent) 38%,var(--border));
+    background:color-mix(in srgb,var(--accent) 5%,var(--surface));
+}
+.notification-card-icon{
+    width:42px;
+    height:42px;
+    display:grid;
+    place-items:center;
+    border-radius:12px;
+    background:var(--surface-2);
+    font-size:18px;
+}
+.notification-card.is-unread .notification-card-icon{background:var(--accent-soft)}
+.notification-card-body{min-width:0}
+.notification-card-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.notification-card h2{margin:0;color:var(--text);font-size:12px;line-height:1.35}
+.notification-card p{margin:4px 0;color:var(--text-soft);font-size:10px;line-height:1.5}
+.notification-card small{color:var(--text-soft);font-size:8px}
+.notification-new-dot{padding:4px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.06em}
+.notification-card-actions{display:flex;align-items:center;gap:7px}
+.notification-card-actions form{margin:0}
+.notification-card-actions .btn-primary-modern,.notification-card-actions .btn-secondary-modern{min-height:34px;padding:0 12px;font-size:9px}
+.notification-delete{
+    width:34px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:transparent;
+    color:var(--text-soft);
+    font-size:16px;
+    cursor:pointer;
+}
+.notification-delete:hover{border-color:var(--danger);color:var(--danger);background:color-mix(in srgb,var(--danger) 8%,transparent)}
+
+@media(max-width:980px){
+    .notification-dropdown{position:fixed;top:72px;right:12px}
+    .notifications-hero{align-items:flex-start;flex-direction:column}
+    .notifications-hero-actions{justify-content:flex-start}
+}
+@media(max-width:720px){
+    .notification-card{grid-template-columns:38px minmax(0,1fr);align-items:start}
+    .notification-card-icon{width:38px;height:38px}
+    .notification-card-actions{grid-column:2;justify-content:flex-start;flex-wrap:wrap}
+}
+
+/* =========================================================
+   HOTFIX V3.2.3 - DROPDOWN DE NOTIFICACIONES VISIBLE
+   Evita que el menu de la campana quede recortado por el navbar.
+========================================================= */
+.public-navbar{
+    overflow:visible !important;
+}
+
+.public-navbar-actions,
+.notification-center{
+    overflow:visible !important;
+}
+
+.notification-center{
+    position:relative;
+    z-index:5100;
+}
+
+.notification-dropdown{
+    z-index:5200;
+}

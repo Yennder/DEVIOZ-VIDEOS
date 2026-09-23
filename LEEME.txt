@@ -1,8 +1,12 @@
-HOTFIX V3.2.2 - SEGUIMIENTO ADMINISTRATIVO
+TECHFLIX V3.2.3 - HOTFIX DROPDOWN DE NOTIFICACIONES
 
-- Corrige progreso superior a 100%.
-- Muestra Desaprobada al agotar intentos sin aprobar.
-- Mantiene la mejor nota real.
-- Agrega columna Intentos y filtro Desaprobada.
+Reemplazar solamente:
+assets/css/public.css
 
-Instalacion: copiar sobre DEVIOZ-VIDEOS. No requiere SQL ni tocar uploads. Luego Ctrl + F5.
+No requiere SQL.
+No tocar uploads.
+Despues usar Ctrl + F5.
+
+Correccion:
+- El desplegable de la campana ya no queda recortado debajo del navbar.
+- Se conserva el comportamiento responsive del centro de notificaciones.

@@ -1,16 +1,19 @@
 <?php
 
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/Notificacion.php';
 
 class Interaccion
 {
     private $conexion;
     private $comentariosConRespuestas = null;
+    private Notificacion $notificaciones;
 
     public function __construct()
     {
         $db = new Conexion();
         $this->conexion = $db->conectar();
+        $this->notificaciones = new Notificacion($this->conexion);
     }
 
     private function soportaRespuestasComentarios()
@@ -447,14 +450,15 @@ class Interaccion
         }
 
         $padre = $this->conexion->prepare(
-            "SELECT id_comentario FROM comentarios
+            "SELECT id_comentario,id_usuario FROM comentarios
              WHERE id_comentario = :padre
                AND id_video = :video
                AND estado = 'publicado'
              LIMIT 1"
         );
         $padre->execute([':padre' => $idComentarioPadre, ':video' => $idVideo]);
-        if (!$padre->fetchColumn()) {
+        $comentarioPadre = $padre->fetch(PDO::FETCH_ASSOC);
+        if (!$comentarioPadre) {
             return false;
         }
 
@@ -485,7 +489,31 @@ class Interaccion
             ':contenido' => $contenido,
             ':usuario_reciente' => $idUsuario,
         ]);
-        return $stmt->rowCount() > 0;
+        $ok = $stmt->rowCount() > 0;
+        if ($ok) {
+            $idRespuesta = (int)$this->conexion->lastInsertId();
+            $autorStmt = $this->conexion->prepare('SELECT id_usuario FROM comentarios WHERE id_comentario=:id LIMIT 1');
+            $autorStmt->execute([':id'=>$idRaiz]);
+            $idAutorRaiz = (int)$autorStmt->fetchColumn();
+            if ($idAutorRaiz > 0 && $idAutorRaiz !== (int)$idUsuario) {
+                $usuarioStmt=$this->conexion->prepare('SELECT nombre FROM usuarios WHERE id_usuario=:id LIMIT 1');
+                $usuarioStmt->execute([':id'=>$idUsuario]);
+                $nombre=(string)($usuarioStmt->fetchColumn() ?: 'Un usuario');
+                $videoStmt=$this->conexion->prepare('SELECT titulo FROM videos WHERE id_video=:id LIMIT 1');
+                $videoStmt->execute([':id'=>$idVideo]);
+                $tituloVideo=(string)($videoStmt->fetchColumn() ?: 'un video');
+                $this->notificaciones->crear(
+                    $idAutorRaiz,
+                    'respuesta_comentario',
+                    'Respondieron a tu comentario',
+                    $nombre . ' respondió a tu comentario en ' . $tituloVideo . '.',
+                    '/DEVIOZ-VIDEOS/public/detalle.php?id=' . $idVideo . '#comentarios',
+                    '💬',
+                    'comentario_respuesta:' . $idRespuesta
+                );
+            }
+        }
+        return $ok;
     }
 
     public function editarComentario($idUsuario, $idComentario, $contenido)

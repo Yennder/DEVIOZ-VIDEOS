@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/sesion.php';
 require_once __DIR__ . '/../controllers/ConfiguracionController.php';
+require_once __DIR__ . '/../controllers/NotificacionController.php';
 
 $configController = new ConfiguracionController();
 $logoSitio = $configController->obtener('logo_sitio');
@@ -11,6 +12,20 @@ $logueado = usuarioAutenticado();
 $nombreUsuario = $_SESSION['nombre'] ?? '';
 $rolUsuario = $_SESSION['rol'] ?? '';
 $paginaActual = basename($_SERVER['PHP_SELF'] ?? 'index.php');
+
+$notificacionesNavbar = [];
+$totalNotificacionesNoLeidas = 0;
+if ($logueado) {
+    try {
+        $notificacionController = new NotificacionController();
+        $notificacionController->sincronizarUsuario((int)$_SESSION['id_usuario']);
+        $notificacionesNavbar = $notificacionController->noLeidas((int)$_SESSION['id_usuario'], 5);
+        $totalNotificacionesNoLeidas = $notificacionController->contarNoLeidas((int)$_SESSION['id_usuario']);
+    } catch (Throwable $e) {
+        $notificacionesNavbar = [];
+        $totalNotificacionesNoLeidas = 0;
+    }
+}
 ?>
 
 <nav class="public-navbar" aria-label="Navegación principal">
@@ -54,6 +69,51 @@ $paginaActual = basename($_SERVER['PHP_SELF'] ?? 'index.php');
                 <span class="theme-slider"></span>
             </label>
         </div>
+
+        <?php if($logueado): ?>
+        <div class="notification-center" id="notificationCenter">
+            <button type="button" class="notification-bell" id="notificationBell" aria-label="Notificaciones" aria-expanded="false">
+                <span aria-hidden="true">🔔</span>
+                <?php if($totalNotificacionesNoLeidas > 0): ?>
+                    <b><?php echo $totalNotificacionesNoLeidas > 99 ? '99+' : (int)$totalNotificacionesNoLeidas; ?></b>
+                <?php endif; ?>
+            </button>
+            <div class="notification-dropdown" id="notificationDropdown" hidden>
+                <div class="notification-dropdown-head">
+                    <div><strong>Notificaciones</strong><small><?php echo (int)$totalNotificacionesNoLeidas; ?> sin leer</small></div>
+                    <a href="notificaciones.php">Ver todas</a>
+                </div>
+                <div class="notification-dropdown-list">
+                    <?php if(empty($notificacionesNavbar)): ?>
+                        <div class="notification-dropdown-empty">
+                            <span>✓</span>
+                            <p>Estás al día.</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach($notificacionesNavbar as $notif): ?>
+                        <form method="POST" action="/DEVIOZ-VIDEOS/public/notificaciones.php" class="notification-dropdown-item">
+                            <?php echo csrfInput(); ?>
+                            <input type="hidden" name="accion" value="leer">
+                            <input type="hidden" name="id_notificacion" value="<?php echo (int)$notif['id_notificacion']; ?>">
+                            <input type="hidden" name="destino" value="<?php echo htmlspecialchars($notif['url'] ?: '/DEVIOZ-VIDEOS/public/notificaciones.php'); ?>">
+                            <button type="submit">
+                                <span class="notification-dropdown-icon"><?php echo htmlspecialchars($notif['icono'] ?: '🔔'); ?></span>
+                                <span><strong><?php echo htmlspecialchars($notif['titulo']); ?></strong><small><?php echo htmlspecialchars($notif['mensaje']); ?></small><em><?php echo htmlspecialchars(date('d/m H:i', strtotime($notif['fecha_creacion']))); ?></em></span>
+                            </button>
+                        </form>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <?php if($totalNotificacionesNoLeidas > 0): ?>
+                <form method="POST" action="/DEVIOZ-VIDEOS/public/notificaciones.php" class="notification-dropdown-footer">
+                    <?php echo csrfInput(); ?>
+                    <input type="hidden" name="accion" value="leer_todas">
+                    <button type="submit">Marcar todas como leídas</button>
+                </form>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <div class="public-user-area">
             <?php if(!$logueado): ?>
