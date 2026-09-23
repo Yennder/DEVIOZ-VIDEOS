@@ -45,7 +45,7 @@ if ($logueado) {
             <a href="index.php" class="<?php echo $paginaActual === 'index.php' ? 'is-active' : ''; ?>">Inicio</a>
             <a href="series.php" class="<?php echo in_array($paginaActual, ['series.php','detalle_serie.php'], true) ? 'is-active' : ''; ?>">Series</a>
             <?php if($logueado): ?>
-                <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php','logros.php','progreso.php'], true) ? 'is-active' : ''; ?>">Aprendizaje</a>
+                <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php','logros.php','progreso.php','certificados.php'], true) ? 'is-active' : ''; ?>">Aprendizaje</a>
                 <a href="favoritos.php" class="<?php echo $paginaActual === 'favoritos.php' ? 'is-active' : ''; ?>">Favoritos</a>
                 <a href="historial.php" class="<?php echo $paginaActual === 'historial.php' ? 'is-active' : ''; ?>">Historial</a>
                 <a href="playlists.php" class="<?php echo $paginaActual === 'playlists.php' ? 'is-active' : ''; ?>">Playlists</a>

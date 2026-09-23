@@ -176,6 +176,13 @@ class="<?php echo menuActivo('/admin/learning/seguimiento.php'); ?>"
 📈 Seguimiento
 </a>
 
+<a
+href="/DEVIOZ-VIDEOS/admin/learning/certificados.php"
+class="<?php echo menuActivo('/admin/learning/certificados.php'); ?>"
+>
+🎓 Certificados
+</a>
+
 
 
 <?php if(isset($_SESSION["rol"]) && $_SESSION["rol"] === "admin"): ?>

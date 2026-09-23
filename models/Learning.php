@@ -2,17 +2,20 @@
 
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/Notificacion.php';
+require_once __DIR__ . '/Certificado.php';
 
 class Learning
 {
     private PDO $conexion;
     private Notificacion $notificaciones;
+    private Certificado $certificados;
 
     public function __construct()
     {
         $db = new Conexion();
         $this->conexion = $db->conectar();
         $this->notificaciones = new Notificacion($this->conexion);
+        $this->certificados = new Certificado($this->conexion);
     }
 
     private function texto($valor, int $max = 0): string
@@ -494,6 +497,7 @@ class Learning
                 '✅',
                 'cap_completada:' . $idAsignacion
             );
+            $this->certificados->emitirPorAsignacion($idAsignacion);
             $this->evaluarLogrosUsuario($idUsuario,$idAsignacion);
             return;
         }
@@ -799,6 +803,7 @@ class Learning
                 '✅',
                 'cap_completada:' . $idAsignacion
             );
+            $this->certificados->emitirPorAsignacion($idAsignacion);
         } elseif ($numero >= (int)$eval['intentos_permitidos']) {
             $this->notificaciones->crear(
                 $idUsuario,

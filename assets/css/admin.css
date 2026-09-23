@@ -3081,3 +3081,124 @@ body.admin-dark-mode .learning-action-table thead th:last-child{
 .table-scroll-shell{width:100%;overflow-x:auto}
 @media(max-width:1000px){.transcription-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.transcription-worker-card{align-items:flex-start;flex-direction:column}.transcription-filters{grid-template-columns:1fr 1fr}.transcription-filters .filtros-botones{grid-column:1/-1}}
 @media(max-width:650px){.transcription-summary-grid{grid-template-columns:1fr 1fr}.transcription-filters{grid-template-columns:1fr}.transcription-filters .filtros-botones{grid-column:auto}.transcription-segment-editor{grid-template-columns:1fr}.transcription-segment-time{text-align:left}.transcription-save-bar{align-items:stretch;flex-direction:column}}
+
+
+/* TECHFLIX V3.2.4 - CERTIFICADOS */
+.certificate-admin-filter{grid-template-columns:minmax(260px,1fr) minmax(180px,240px) auto}
+.certificate-admin-code{display:inline-block;max-width:220px;padding:5px 7px;border-radius:7px;background:rgba(8,127,146,.08);font-size:9px;overflow-wrap:anywhere}
+.certificate-admin-status{display:inline-flex;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:800;text-transform:uppercase}.certificate-admin-status.is-valid{background:#e5f6ef;color:#1f7456}.certificate-admin-status.is-revoked{background:#ffe8e8;color:#9c3030}.admin-dark-mode .certificate-admin-status.is-valid{background:#16372d;color:#a8ecd4}.admin-dark-mode .certificate-admin-status.is-revoked{background:#3d2020;color:#ffc0c0}
+.certificate-admin-actions{min-width:190px;flex-wrap:wrap}.certificate-admin-actions form{margin:0}.certificate-admin-actions button{font-family:inherit}
+@media(max-width:900px){.certificate-admin-filter{grid-template-columns:1fr}.certificate-admin-filter .filtros-botones{grid-column:auto}}
+
+/* =========================================================
+   TECHFLIX V3.2.4 HOTFIX - CERTIFICADOS + SIDEBAR ADMIN
+   - Acciones compactas y alineadas sin depender del zoom.
+   - Sidebar con scroll vertical independiente en escritorio.
+========================================================= */
+
+/* Sidebar: mantiene visible el panel y permite recorrer su menu sin mover el contenido. */
+@media (min-width: 901px){
+    .admin-sidebar{
+        position:sticky;
+        top:0;
+        height:100vh;
+        min-height:100vh;
+        overflow-y:auto;
+        overflow-x:hidden;
+        overscroll-behavior:contain;
+        scrollbar-gutter:stable;
+        padding-bottom:24px;
+    }
+
+    .admin-sidebar nav{
+        padding-bottom:18px;
+    }
+
+    .admin-sidebar::-webkit-scrollbar{
+        width:8px;
+    }
+
+    .admin-sidebar::-webkit-scrollbar-track{
+        background:transparent;
+    }
+
+    .admin-sidebar::-webkit-scrollbar-thumb{
+        background:color-mix(in srgb,var(--adm-muted,#78909c) 45%,transparent);
+        border-radius:999px;
+    }
+
+    .admin-sidebar::-webkit-scrollbar-thumb:hover{
+        background:color-mix(in srgb,var(--adm-accent,#19bdca) 65%,transparent);
+    }
+}
+
+/* Certificados: acciones compactas, simetricas y contenidas dentro de su celda. */
+.learning-admin-page .admin-table-wrapper{
+    overflow-x:auto;
+}
+
+.learning-admin-page .admin-table{
+    width:100%;
+}
+
+.learning-admin-page .admin-table th:last-child,
+.learning-admin-page .admin-table td:last-child{
+    width:174px !important;
+    min-width:174px;
+}
+
+.certificate-admin-actions{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+    width:100%;
+    min-width:0;
+    max-width:174px;
+    align-items:stretch;
+}
+
+.certificate-admin-actions > a,
+.certificate-admin-actions > form,
+.certificate-admin-actions > form > button{
+    min-width:0;
+    width:100%;
+    margin:0;
+}
+
+.certificate-admin-actions > a,
+.certificate-admin-actions > form > button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:34px;
+    padding:7px 9px;
+    border-radius:8px;
+    white-space:nowrap;
+    font-size:10px;
+    line-height:1;
+}
+
+.certificate-admin-actions > form{
+    grid-column:1 / -1;
+}
+
+/* En pantallas medianas la tabla se desplaza dentro de su contenedor, no deforma botones. */
+@media (max-width: 1180px) and (min-width: 901px){
+    .learning-admin-page .admin-table{
+        min-width:940px;
+    }
+}
+
+/* En movil el sidebar vuelve al flujo normal y la tabla conserva scroll interno. */
+@media (max-width: 900px){
+    .admin-sidebar{
+        height:auto;
+        min-height:0;
+        overflow:visible;
+        scrollbar-gutter:auto;
+    }
+
+    .certificate-admin-actions{
+        max-width:none;
+    }
+}
