@@ -38,6 +38,7 @@ class LearningController
     public function agregarPregunta($e,$d){ return $this->modelo->agregarPregunta((int)$e,$d); }
     public function eliminarPregunta($p,$e){ return $this->modelo->eliminarPregunta((int)$p,(int)$e); }
     public function intentosAsignacion($a,$e){ return $this->modelo->intentosAsignacion((int)$a,(int)$e); }
+    public function revisionEvaluacionAgotada($a,$u){ return $this->modelo->revisionEvaluacionAgotada((int)$a,(int)$u); }
     public function puedeRendirEvaluacion($a,$u){ return $this->modelo->puedeRendirEvaluacion((int)$a,(int)$u); }
     public function registrarIntento($a,$u,$r){ return $this->modelo->registrarIntento((int)$a,(int)$u,$r); }
     public function listarLogrosAdmin(){ return $this->modelo->listarLogrosAdmin(); }

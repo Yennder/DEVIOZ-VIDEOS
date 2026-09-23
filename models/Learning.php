@@ -628,6 +628,50 @@ class Learning
         $stmt->execute([':a'=>$idAsignacion,':e'=>$idEvaluacion]); return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Devuelve la revisión del último intento únicamente cuando el usuario
+     * agotó todos sus intentos sin aprobar. Las respuestas correctas no se
+     * exponen mientras exista un intento disponible.
+     */
+    public function revisionEvaluacionAgotada(int $idAsignacion, int $idUsuario): ?array
+    {
+        $detalle=$this->detalleAsignacion($idAsignacion,$idUsuario);
+        if (!$detalle || !$detalle['evaluacion']) return null;
+
+        $eval=$detalle['evaluacion'];
+        $intentos=$this->intentosAsignacion($idAsignacion,(int)$eval['id_evaluacion']);
+        if (count($intentos)<(int)$eval['intentos_permitidos']) return null;
+        foreach ($intentos as $intento) {
+            if (!empty($intento['aprobado'])) return null;
+        }
+        if (!$intentos) return null;
+
+        $ultimo=$intentos[0];
+        $stmt=$this->conexion->prepare("SELECT p.id_pregunta,p.pregunta,p.tipo,p.puntos,
+                r.id_opcion AS id_opcion_usuario,r.es_correcta,r.puntos_obtenidos,
+                ou.texto AS respuesta_usuario,
+                oc.id_opcion AS id_opcion_correcta,oc.texto AS respuesta_correcta
+            FROM learning_preguntas p
+            LEFT JOIN learning_respuestas r ON r.id_pregunta=p.id_pregunta AND r.id_intento=:intento
+            LEFT JOIN learning_opciones ou ON ou.id_opcion=r.id_opcion
+            LEFT JOIN learning_opciones oc ON oc.id_pregunta=p.id_pregunta AND oc.es_correcta=1
+            WHERE p.id_evaluacion=:evaluacion
+            ORDER BY p.orden,p.id_pregunta");
+        $stmt->execute([':intento'=>$ultimo['id_intento'],':evaluacion'=>$eval['id_evaluacion']]);
+        $respuestas=$stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $correctas=0;
+        foreach ($respuestas as $r) if (!empty($r['es_correcta'])) $correctas++;
+
+        return [
+            'intento'=>$ultimo,
+            'evaluacion'=>$eval,
+            'respuestas'=>$respuestas,
+            'correctas'=>$correctas,
+            'total'=>count($respuestas),
+        ];
+    }
+
     public function puedeRendirEvaluacion(int $idAsignacion, int $idUsuario): array
     {
         $detalle=$this->detalleAsignacion($idAsignacion,$idUsuario);
@@ -763,8 +807,72 @@ class Learning
     public function seguimientoAdmin(): array
     {
         $this->actualizarEstadosVencidos();
-        $sql="SELECT a.id_asignacion,a.estado,a.fecha_asignacion,a.fecha_inicio_real,a.fecha_completado,u.nombre,u.email,cap.nombre AS capacitacion,cap.fecha_inicio,cap.fecha_limite,c.titulo AS curso,COUNT(DISTINCT l.id_leccion) total_lecciones,SUM(CASE WHEN pl.estado='completada' THEN 1 ELSE 0 END) completadas,MAX(i.porcentaje) mejor_nota FROM learning_asignaciones a INNER JOIN usuarios u ON u.id_usuario=a.id_usuario INNER JOIN learning_capacitaciones cap ON cap.id_capacitacion=a.id_capacitacion INNER JOIN learning_cursos c ON c.id_curso=cap.id_curso LEFT JOIN learning_curso_lecciones l ON l.id_curso=c.id_curso AND l.obligatoria=1 LEFT JOIN learning_progreso_lecciones pl ON pl.id_asignacion=a.id_asignacion AND pl.id_leccion=l.id_leccion LEFT JOIN learning_intentos i ON i.id_asignacion=a.id_asignacion GROUP BY a.id_asignacion ORDER BY FIELD(a.estado,'vencida','en_progreso','pendiente','completada'),cap.fecha_limite ASC";
+
+        // V3.2.2 hotfix: las lecciones y los intentos se agregan por separado.
+        // Antes, el JOIN directo contra learning_intentos multiplicaba las filas de
+        // progreso por cada intento realizado (4 lecciones x 3 intentos = 300%).
+        $sql="SELECT
+                    a.id_asignacion,a.estado,a.fecha_asignacion,a.fecha_inicio_real,a.fecha_completado,
+                    u.nombre,u.email,
+                    cap.nombre AS capacitacion,cap.fecha_inicio,cap.fecha_limite,
+                    c.id_curso,c.titulo AS curso,
+                    COALESCE(lp.total_lecciones,0) AS total_lecciones,
+                    COALESCE(lp.completadas,0) AS completadas,
+                    e.id_evaluacion,e.intentos_permitidos,
+                    ie.intentos_realizados,ie.intentos_aprobados,ie.mejor_nota
+              FROM learning_asignaciones a
+              INNER JOIN usuarios u ON u.id_usuario=a.id_usuario
+              INNER JOIN learning_capacitaciones cap ON cap.id_capacitacion=a.id_capacitacion
+              INNER JOIN learning_cursos c ON c.id_curso=cap.id_curso
+              LEFT JOIN (
+                    SELECT l.id_curso,pl.id_asignacion,
+                           COUNT(*) AS total_lecciones,
+                           SUM(CASE WHEN pl.estado='completada' THEN 1 ELSE 0 END) AS completadas
+                    FROM learning_curso_lecciones l
+                    INNER JOIN learning_asignaciones ax ON 1=1
+                    INNER JOIN learning_capacitaciones capx ON capx.id_capacitacion=ax.id_capacitacion AND capx.id_curso=l.id_curso
+                    LEFT JOIN learning_progreso_lecciones pl ON pl.id_asignacion=ax.id_asignacion AND pl.id_leccion=l.id_leccion
+                    WHERE l.obligatoria=1
+                    GROUP BY l.id_curso,ax.id_asignacion
+              ) lp ON lp.id_curso=c.id_curso AND lp.id_asignacion=a.id_asignacion
+              LEFT JOIN learning_evaluaciones e ON e.id_curso=c.id_curso AND e.estado='publicada'
+              LEFT JOIN (
+                    SELECT id_asignacion,id_evaluacion,COUNT(*) AS intentos_realizados,
+                           SUM(CASE WHEN aprobado=1 THEN 1 ELSE 0 END) AS intentos_aprobados,
+                           MAX(porcentaje) AS mejor_nota
+                    FROM learning_intentos
+                    GROUP BY id_asignacion,id_evaluacion
+              ) ie ON ie.id_asignacion=a.id_asignacion AND ie.id_evaluacion=e.id_evaluacion
+              ORDER BY FIELD(a.estado,'vencida','en_progreso','pendiente','completada'),cap.fecha_limite ASC";
+
         $rows=$this->conexion->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        foreach($rows as &$r){$t=(int)$r['total_lecciones'];$c=(int)$r['completadas'];$r['porcentaje']=$t>0?round(($c/$t)*100,1):0;} unset($r); return $rows;
+        foreach($rows as &$r){
+            $total=(int)($r['total_lecciones']??0);
+            $completadas=(int)($r['completadas']??0);
+            $r['porcentaje']=$total>0?min(100,round(($completadas/$total)*100,1)):0;
+
+            $r['intentos_realizados']=(int)($r['intentos_realizados']??0);
+            $r['intentos_aprobados']=(int)($r['intentos_aprobados']??0);
+            $r['intentos_permitidos']=$r['id_evaluacion']!==null?(int)$r['intentos_permitidos']:0;
+
+            $leccionesCompletas=$total>0 && $completadas >= $total;
+            $evaluacionPublicada=$r['id_evaluacion']!==null;
+            $intentosAgotados=$evaluacionPublicada
+                && $r['intentos_permitidos']>0
+                && $r['intentos_realizados'] >= $r['intentos_permitidos'];
+            $aprobo=$r['intentos_aprobados']>0;
+
+            // Estado visual para seguimiento administrativo. No cambia el ENUM ni
+            // altera la asignación: solo permite distinguir al usuario que terminó
+            // las lecciones pero agotó el examen sin aprobar.
+            $r['estado_base']=$r['estado'];
+            if ($r['estado']==='completada' || $aprobo) {
+                $r['estado']='completada';
+            } elseif ($leccionesCompletas && $intentosAgotados && !$aprobo) {
+                $r['estado']='desaprobada';
+            }
+        }
+        unset($r);
+        return $rows;
     }
 }

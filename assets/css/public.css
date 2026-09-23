@@ -6863,3 +6863,115 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:"Manrope","Segoe UI
     font-size:12px;
     font-weight:750;
 }
+
+/* =========================================================
+   TECHFLIX V3.2.2 - Retroalimentacion de evaluaciones
+   ========================================================= */
+.learning-review-section{
+    max-width:1000px;
+    margin:22px auto 0;
+    padding:22px;
+    border:1px solid var(--border);
+    border-radius:20px;
+    background:var(--surface);
+}
+.learning-review-title-row{align-items:flex-start;margin-bottom:18px}
+.learning-review-title-row h2{margin:4px 0 5px;color:var(--text)}
+.learning-review-title-row p{margin:0;color:var(--text-soft);font-size:11px;max-width:720px}
+.learning-review-summary{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px;
+    margin-bottom:16px;
+}
+.learning-review-summary>div{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    padding:14px 15px;
+    border:1px solid var(--border);
+    border-radius:13px;
+    background:var(--surface-2);
+}
+.learning-review-summary strong{font-size:22px;color:var(--text);line-height:1}
+.learning-review-summary span{font-size:9px;color:var(--text-soft);text-transform:uppercase;letter-spacing:.06em}
+.learning-review-list{display:grid;gap:11px}
+.learning-review-question{
+    padding:16px;
+    border:1px solid var(--border);
+    border-radius:15px;
+    background:var(--surface-2);
+}
+.learning-review-question.is-correct{border-color:color-mix(in srgb,var(--success) 36%,var(--border))}
+.learning-review-question.is-wrong{border-color:color-mix(in srgb,var(--danger) 38%,var(--border))}
+.learning-review-question-head{
+    display:grid;
+    grid-template-columns:34px minmax(0,1fr) auto;
+    gap:10px;
+    align-items:start;
+}
+.learning-review-number{
+    width:32px;
+    height:32px;
+    display:grid;
+    place-items:center;
+    border-radius:9px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-size:10px;
+    font-weight:900;
+}
+.learning-review-question h3{margin:1px 0 3px;color:var(--text);font-size:14px;line-height:1.4}
+.learning-review-question small{font-size:9px;color:var(--text-soft)}
+.learning-review-status{
+    white-space:nowrap;
+    padding:6px 8px;
+    border-radius:999px;
+    font-size:9px;
+    font-weight:800;
+}
+.learning-review-question.is-correct .learning-review-status{
+    background:color-mix(in srgb,var(--success) 12%,var(--surface));
+    color:var(--success);
+}
+.learning-review-question.is-wrong .learning-review-status{
+    background:color-mix(in srgb,var(--danger) 12%,var(--surface));
+    color:var(--danger);
+}
+.learning-review-answers{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+    margin:12px 0 0 44px;
+}
+.learning-review-answer{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    padding:11px 12px;
+    border:1px solid var(--border);
+    border-radius:11px;
+    background:var(--surface);
+}
+.learning-review-answer span{font-size:8px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft)}
+.learning-review-answer strong{font-size:11px;color:var(--text);line-height:1.45}
+.learning-review-question.is-wrong .user-answer{border-color:color-mix(in srgb,var(--danger) 28%,var(--border))}
+.learning-review-answer.correct-answer{border-color:color-mix(in srgb,var(--success) 28%,var(--border))}
+.learning-review-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    margin-top:16px;
+    padding-top:15px;
+    border-top:1px solid var(--border);
+}
+.learning-review-footer p{margin:0;color:var(--text-soft);font-size:10px;max-width:690px}
+
+@media(max-width:720px){
+    .learning-review-summary{grid-template-columns:1fr}
+    .learning-review-question-head{grid-template-columns:32px minmax(0,1fr)}
+    .learning-review-status{grid-column:2;justify-self:start}
+    .learning-review-answers{grid-template-columns:1fr;margin-left:0}
+    .learning-review-footer{align-items:stretch;flex-direction:column}
+}

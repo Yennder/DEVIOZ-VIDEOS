@@ -4,13 +4,13 @@ if (!function_exists('learningH')) {
 }
 if (!function_exists('learningEstadoTexto')) {
     function learningEstadoTexto(string $estado): string {
-        $map=['pendiente'=>'Pendiente','en_progreso'=>'En progreso','completada'=>'Completada','vencida'=>'Vencida','planificada'=>'Planificada','activa'=>'Activa','cerrada'=>'Cerrada','publicado'=>'Publicado','borrador'=>'Borrador','archivado'=>'Archivado','publicada'=>'Publicada'];
+        $map=['pendiente'=>'Pendiente','en_progreso'=>'En progreso','completada'=>'Completada','vencida'=>'Vencida','desaprobada'=>'Desaprobada','planificada'=>'Planificada','activa'=>'Activa','cerrada'=>'Cerrada','publicado'=>'Publicado','borrador'=>'Borrador','archivado'=>'Archivado','publicada'=>'Publicada'];
         return $map[$estado] ?? ucfirst(str_replace('_',' ',$estado));
     }
 }
 if (!function_exists('learningEstadoClase')) {
     function learningEstadoClase(string $estado): string {
-        $map=['completada'=>'is-success','publicado'=>'is-success','publicada'=>'is-success','activa'=>'is-success','en_progreso'=>'is-info','pendiente'=>'is-warning','planificada'=>'is-warning','vencida'=>'is-danger','cerrada'=>'is-muted','borrador'=>'is-muted','archivado'=>'is-muted'];
+        $map=['completada'=>'is-success','publicado'=>'is-success','publicada'=>'is-success','activa'=>'is-success','en_progreso'=>'is-info','pendiente'=>'is-warning','planificada'=>'is-warning','vencida'=>'is-danger','desaprobada'=>'is-danger','cerrada'=>'is-muted','borrador'=>'is-muted','archivado'=>'is-muted'];
         return $map[$estado] ?? 'is-muted';
     }
 }
