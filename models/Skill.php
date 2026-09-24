@@ -327,6 +327,252 @@ class Skill
         }
     }
 
+    /**
+     * Calcula el perfil tecnologico del usuario a partir de evidencia academica real.
+     *
+     * Regla por curso:
+     * - Con evaluacion publicada: 40% progreso de lecciones + 40% mejor nota + 20% finalizacion.
+     * - Sin evaluacion publicada: 80% progreso de lecciones + 20% finalizacion.
+     *
+     * Si el mismo curso fue asignado mas de una vez, se conserva la mejor evidencia para
+     * evitar que una reasignacion duplique o penalice artificialmente la skill.
+     */
+    public function perfilUsuario(int $idUsuario): array
+    {
+        $sql = "
+            SELECT
+                a.id_asignacion,
+                a.estado AS asignacion_estado,
+                cap.id_curso,
+                cap.nombre AS capacitacion,
+                c.titulo AS curso,
+                s.id_skill,
+                s.codigo,
+                s.nombre,
+                s.categoria,
+                s.descripcion,
+                s.icono,
+                cs.peso,
+                cs.nivel_objetivo,
+                cs.origen,
+                COALESCE(lp.total_lecciones, 0) AS total_lecciones,
+                COALESCE(lp.completadas, 0) AS completadas,
+                e.id_evaluacion,
+                e.nota_minima,
+                COALESCE(ie.mejor_nota, 0) AS mejor_nota,
+                COALESCE(ie.intentos, 0) AS intentos
+            FROM learning_asignaciones a
+            INNER JOIN learning_capacitaciones cap ON cap.id_capacitacion = a.id_capacitacion
+            INNER JOIN learning_cursos c ON c.id_curso = cap.id_curso
+            INNER JOIN learning_curso_skills cs ON cs.id_curso = c.id_curso
+            INNER JOIN learning_skills s ON s.id_skill = cs.id_skill
+            LEFT JOIN (
+                SELECT
+                    ax.id_asignacion,
+                    COUNT(DISTINCT l.id_leccion) AS total_lecciones,
+                    COUNT(DISTINCT CASE WHEN pl.estado = 'completada' THEN l.id_leccion END) AS completadas
+                FROM learning_asignaciones ax
+                INNER JOIN learning_capacitaciones capx ON capx.id_capacitacion = ax.id_capacitacion
+                INNER JOIN learning_curso_lecciones l ON l.id_curso = capx.id_curso AND l.obligatoria = 1
+                LEFT JOIN learning_progreso_lecciones pl
+                       ON pl.id_asignacion = ax.id_asignacion
+                      AND pl.id_leccion = l.id_leccion
+                GROUP BY ax.id_asignacion
+            ) lp ON lp.id_asignacion = a.id_asignacion
+            LEFT JOIN learning_evaluaciones e
+                   ON e.id_curso = c.id_curso
+                  AND e.estado = 'publicada'
+            LEFT JOIN (
+                SELECT
+                    id_asignacion,
+                    id_evaluacion,
+                    MAX(porcentaje) AS mejor_nota,
+                    COUNT(*) AS intentos
+                FROM learning_intentos
+                GROUP BY id_asignacion, id_evaluacion
+            ) ie ON ie.id_asignacion = a.id_asignacion
+                AND ie.id_evaluacion = e.id_evaluacion
+            WHERE a.id_usuario = :usuario
+              AND s.estado = 1
+            ORDER BY s.categoria, s.nombre, c.titulo, a.id_asignacion
+        ";
+
+        try {
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->execute([':usuario' => $idUsuario]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            // Permite que el resto de Learning Lab siga funcionando si aun no se instalo V3.2.5.1.
+            if (in_array((string)$e->getCode(), ['42S02', '42S22'], true)) {
+                return $this->perfilUsuarioVacio();
+            }
+            throw $e;
+        }
+
+        $skills = [];
+        $cursosGlobales = [];
+
+        foreach ($rows as $row) {
+            $idSkill = (int)$row['id_skill'];
+            $idCurso = (int)$row['id_curso'];
+            $total = (int)$row['total_lecciones'];
+            $completadas = (int)$row['completadas'];
+            $finalizada = ((string)$row['asignacion_estado'] === 'completada');
+            $progreso = $total > 0
+                ? min(100, round(($completadas / $total) * 100, 2))
+                : ($finalizada ? 100.0 : 0.0);
+
+            $tieneEvaluacion = $row['id_evaluacion'] !== null;
+            $mejorNota = $tieneEvaluacion ? min(100, max(0, (float)$row['mejor_nota'])) : null;
+
+            if ($tieneEvaluacion) {
+                $puntajeCurso = ($progreso * 0.40)
+                    + (((float)$mejorNota) * 0.40)
+                    + ($finalizada ? 20.0 : 0.0);
+            } else {
+                $puntajeCurso = ($progreso * 0.80)
+                    + ($finalizada ? 20.0 : 0.0);
+            }
+            $puntajeCurso = round(min(100, max(0, $puntajeCurso)), 1);
+
+            if (!isset($skills[$idSkill])) {
+                $skills[$idSkill] = [
+                    'id_skill' => $idSkill,
+                    'codigo' => (string)$row['codigo'],
+                    'nombre' => (string)$row['nombre'],
+                    'categoria' => (string)$row['categoria'],
+                    'descripcion' => (string)($row['descripcion'] ?? ''),
+                    'icono' => (string)($row['icono'] ?: '🧩'),
+                    'porcentaje' => 0.0,
+                    'nivel' => 'pendiente',
+                    'nivel_texto' => 'Pendiente',
+                    'nivel_objetivo' => 'basico',
+                    'nivel_objetivo_texto' => 'Básico',
+                    'cursos_asociados' => 0,
+                    'cursos_completados' => 0,
+                    'cursos' => [],
+                    '_cursos' => [],
+                ];
+            }
+
+            $evidencia = [
+                'id_curso' => $idCurso,
+                'curso' => (string)$row['curso'],
+                'capacitacion' => (string)$row['capacitacion'],
+                'peso' => round((float)$row['peso'], 2),
+                'nivel_objetivo' => (string)$row['nivel_objetivo'],
+                'progreso' => $progreso,
+                'tiene_evaluacion' => $tieneEvaluacion,
+                'mejor_nota' => $mejorNota,
+                'intentos' => (int)$row['intentos'],
+                'completada' => $finalizada,
+                'puntaje_curso' => $puntajeCurso,
+                'origen_skill' => (string)($row['origen'] ?? 'manual'),
+            ];
+
+            // Si el curso fue asignado mas de una vez, conserva la evidencia con mejor puntaje.
+            if (!isset($skills[$idSkill]['_cursos'][$idCurso])
+                || $puntajeCurso > (float)$skills[$idSkill]['_cursos'][$idCurso]['puntaje_curso']) {
+                $skills[$idSkill]['_cursos'][$idCurso] = $evidencia;
+            }
+
+            $actualObjetivo = $skills[$idSkill]['nivel_objetivo'];
+            if ($this->valorNivelObjetivo((string)$row['nivel_objetivo']) > $this->valorNivelObjetivo($actualObjetivo)) {
+                $skills[$idSkill]['nivel_objetivo'] = (string)$row['nivel_objetivo'];
+            }
+            $cursosGlobales[$idCurso] = true;
+        }
+
+        foreach ($skills as &$skill) {
+            $sumaPonderada = 0.0;
+            $sumaPesos = 0.0;
+            $completados = 0;
+            $cursos = array_values($skill['_cursos']);
+
+            foreach ($cursos as $evidencia) {
+                $peso = max(0.01, (float)$evidencia['peso']);
+                $sumaPonderada += ((float)$evidencia['puntaje_curso']) * $peso;
+                $sumaPesos += $peso;
+                if (!empty($evidencia['completada'])) {
+                    $completados++;
+                }
+            }
+
+            $porcentaje = $sumaPesos > 0 ? round($sumaPonderada / $sumaPesos, 1) : 0.0;
+            [$nivel, $nivelTexto] = $this->nivelDesdePorcentaje($porcentaje);
+            $skill['porcentaje'] = $porcentaje;
+            $skill['nivel'] = $nivel;
+            $skill['nivel_texto'] = $nivelTexto;
+            $skill['nivel_objetivo_texto'] = $this->textoNivelObjetivo((string)$skill['nivel_objetivo']);
+            $skill['cursos_asociados'] = count($cursos);
+            $skill['cursos_completados'] = $completados;
+            usort($cursos, static function (array $a, array $b): int {
+                $cmp = ((float)$b['puntaje_curso'] <=> (float)$a['puntaje_curso']);
+                return $cmp !== 0 ? $cmp : strcmp((string)$a['curso'], (string)$b['curso']);
+            });
+            $skill['cursos'] = $cursos;
+            unset($skill['_cursos']);
+        }
+        unset($skill);
+
+        $skills = array_values($skills);
+        usort($skills, static function (array $a, array $b): int {
+            $cmp = ((float)$b['porcentaje'] <=> (float)$a['porcentaje']);
+            return $cmp !== 0 ? $cmp : strcmp((string)$a['nombre'], (string)$b['nombre']);
+        });
+
+        $promedio = $skills
+            ? round(array_sum(array_map(static fn(array $s): float => (float)$s['porcentaje'], $skills)) / count($skills), 1)
+            : 0.0;
+        $destacada = $skills[0] ?? null;
+
+        return [
+            'skills' => $skills,
+            'resumen' => [
+                'total_skills' => count($skills),
+                'skills_en_desarrollo' => count(array_filter($skills, static fn(array $s): bool => (float)$s['porcentaje'] > 0)),
+                'promedio' => $promedio,
+                'cursos_con_skills' => count($cursosGlobales),
+                'destacada_nombre' => $destacada['nombre'] ?? '',
+                'destacada_porcentaje' => $destacada['porcentaje'] ?? 0,
+            ],
+        ];
+    }
+
+    private function perfilUsuarioVacio(): array
+    {
+        return [
+            'skills' => [],
+            'resumen' => [
+                'total_skills' => 0,
+                'skills_en_desarrollo' => 0,
+                'promedio' => 0,
+                'cursos_con_skills' => 0,
+                'destacada_nombre' => '',
+                'destacada_porcentaje' => 0,
+            ],
+        ];
+    }
+
+    private function nivelDesdePorcentaje(float $porcentaje): array
+    {
+        if ($porcentaje <= 0) return ['pendiente', 'Pendiente'];
+        if ($porcentaje < 40) return ['desarrollo', 'En desarrollo'];
+        if ($porcentaje < 60) return ['basico', 'Básico'];
+        if ($porcentaje < 80) return ['intermedio', 'Intermedio'];
+        return ['avanzado', 'Avanzado'];
+    }
+
+    private function valorNivelObjetivo(string $nivel): int
+    {
+        return ['basico' => 1, 'intermedio' => 2, 'avanzado' => 3][$nivel] ?? 1;
+    }
+
+    private function textoNivelObjetivo(string $nivel): string
+    {
+        return ['basico' => 'Básico', 'intermedio' => 'Intermedio', 'avanzado' => 'Avanzado'][$nivel] ?? 'Básico';
+    }
+
     public function contextoCursoParaIA(int $idCurso): array
     {
         $cursoStmt = $this->conexion->prepare("SELECT * FROM learning_cursos WHERE id_curso=:id LIMIT 1");

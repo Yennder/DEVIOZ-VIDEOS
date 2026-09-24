@@ -16,6 +16,7 @@ $categorias = $categorias ?? [];
         <span class="sidebar-eyebrow">Learning Lab</span>
         <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mi aprendizaje</a>
         <a href="progreso.php" class="<?php echo $paginaActual === 'progreso.php' ? 'menu-publico-activo' : ''; ?>"><span>↗</span>Mi progreso</a>
+        <a href="skills.php" class="<?php echo $paginaActual === 'skills.php' ? 'menu-publico-activo' : ''; ?>"><span>🧩</span>Mis skills</a>
         <a href="logros.php" class="<?php echo $paginaActual === 'logros.php' ? 'menu-publico-activo' : ''; ?>"><span>🏅</span>Mis logros</a>
         <a href="certificados.php" class="<?php echo $paginaActual === 'certificados.php' ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mis certificados</a>
         <a href="notificaciones.php" class="<?php echo $paginaActual === 'notificaciones.php' ? 'menu-publico-activo' : ''; ?>"><span>🔔</span>Notificaciones</a>

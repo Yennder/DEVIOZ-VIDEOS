@@ -19,6 +19,7 @@ class SkillController
     public function skillsCurso($idCurso){ return $this->modelo->skillsCurso((int)$idCurso); }
     public function guardarSkillsCurso($idCurso,$ids,$pesos,$niveles){ return $this->modelo->guardarSkillsCurso((int)$idCurso,(array)$ids,(array)$pesos,(array)$niveles); }
     public function contextoCursoIA($idCurso){ return $this->modelo->contextoCursoParaIA((int)$idCurso); }
+    public function perfilUsuario($idUsuario){ return $this->modelo->perfilUsuario((int)$idUsuario); }
 
     public function analizarCursoIA($idCurso): array
     {

@@ -1,1 +1,1 @@
-V3.2.2 no requiere migracion SQL.
+V3.2.5.2 no requiere SQL. Usa las tablas learning_skills y learning_curso_skills instaladas en V3.2.5.1.
