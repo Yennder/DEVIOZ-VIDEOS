@@ -3202,3 +3202,56 @@ body.admin-dark-mode .learning-action-table thead th:last-child{
         max-width:none;
     }
 }
+
+/* =========================================================
+   TECHFLIX V3.2.5.1 - GESTION DE SKILLS
+========================================================= */
+.skill-filter{grid-template-columns:minmax(240px,1fr) minmax(150px,200px) minmax(130px,170px) auto}
+.skill-admin-table th:last-child,.skill-admin-table td:last-child{width:150px!important;min-width:150px!important}
+.skill-name-cell{display:flex;gap:10px;align-items:flex-start;min-width:220px}
+.skill-icon{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border:1px solid var(--adm-border);border-radius:10px;background:var(--adm-surface-2);font-size:17px}
+.skill-code{display:inline-block;padding:4px 7px;border-radius:7px;background:var(--adm-surface-2);border:1px solid var(--adm-border);color:var(--adm-accent);font-size:9px;font-weight:800;overflow-wrap:anywhere}
+.skill-course-form{display:grid;gap:16px}
+.skill-course-toolbar{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:15px 17px;border:1px solid var(--adm-border);border-radius:14px;background:var(--adm-surface)}
+.skill-course-toolbar strong{display:block;font-size:13px}.skill-course-toolbar small{display:block;margin-top:3px;color:var(--adm-muted);font-size:10px}
+.skill-weight-total{display:grid;grid-template-columns:auto auto;gap:7px 10px;align-items:center;min-width:112px;padding:9px 12px;border-radius:11px;background:var(--adm-surface-2);border:1px solid var(--adm-border)}
+.skill-weight-total span{font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--adm-muted);font-weight:800}.skill-weight-total b{font-size:16px;text-align:right}.skill-weight-total.is-valid{border-color:#77c9ac;background:#e7f5ef;color:#176548}.skill-weight-total.is-warning{border-color:#e6c96f;background:#fff5dc;color:#8d6515}
+body.admin-dark-mode .skill-weight-total.is-valid{border-color:#285442;background:#163128;color:#8fe1bf}body.admin-dark-mode .skill-weight-total.is-warning{border-color:#5d512a;background:#352f19;color:#e8cd76}
+.skill-course-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.skill-course-card{position:relative;display:grid;gap:12px;padding:14px;border:1px solid var(--adm-border);border-radius:14px;background:var(--adm-surface);transition:.16s ease}
+.skill-course-card.is-selected{border-color:color-mix(in srgb,var(--adm-accent) 70%,var(--adm-border));box-shadow:0 0 0 2px color-mix(in srgb,var(--adm-accent) 10%,transparent)}
+.skill-course-main{display:grid!important;grid-template-columns:20px 34px minmax(0,1fr);gap:9px;align-items:center;cursor:pointer;margin:0!important}.skill-course-main>input{width:auto!important}.skill-course-main strong{display:block;font-size:12px}.skill-course-main small{display:block;color:var(--adm-muted);font-size:9px;margin-top:2px}
+.skill-course-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.skill-course-fields label{font-size:9px;color:var(--adm-muted);font-weight:800}.skill-course-fields input,.skill-course-fields select{margin-top:5px!important}
+.skill-inactive-badge{position:absolute;top:10px;right:10px}
+.skill-course-footer{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:15px 17px;border:1px solid var(--adm-border);border-radius:14px;background:var(--adm-surface)}.skill-course-footer p{margin:0;color:var(--adm-muted);font-size:10px}
+@media(max-width:1000px){.skill-course-grid{grid-template-columns:1fr}.skill-filter{grid-template-columns:1fr 1fr}.skill-filter .filtros-botones{grid-column:1/-1}}
+@media(max-width:700px){.skill-filter{grid-template-columns:1fr}.skill-filter .filtros-botones{grid-column:auto}.skill-course-toolbar,.skill-course-footer{align-items:stretch;flex-direction:column}.skill-weight-total{width:100%}.skill-course-fields{grid-template-columns:1fr}}
+
+/* =========================================================
+   TECHFLIX V3.2.5.1 - SKILLS + DETECCION AUTOMATICA IA
+========================================================= */
+.skill-ai-panel,.skill-ai-results{display:grid;gap:15px;margin-bottom:20px;padding:18px;border:1px solid var(--adm-border);border-radius:16px;background:var(--adm-surface);box-shadow:var(--adm-shadow)}
+.skill-ai-head,.skill-ai-results-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.skill-ai-head h2,.skill-ai-results-head h2{margin:3px 0 5px;font-size:19px;color:var(--adm-text)}
+.skill-ai-head p,.skill-ai-results-head p{margin:0;max-width:760px;font-size:11px;line-height:1.55;color:var(--adm-muted)}
+.skill-ai-kicker{display:block;color:var(--adm-accent);font-size:9px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+.skill-ai-action-form{flex:0 0 auto;margin:0}.skill-ai-action-form button:disabled{opacity:.45;cursor:not-allowed}
+.skill-ai-coverage{display:grid;grid-template-columns:110px 110px 110px minmax(260px,1fr);gap:10px}
+.skill-ai-coverage>div{padding:12px;border:1px solid var(--adm-border);border-radius:12px;background:var(--adm-surface-2)}
+.skill-ai-coverage span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--adm-muted)}
+.skill-ai-coverage strong{display:block;margin-top:5px;font-size:18px;color:var(--adm-text)}
+.skill-ai-coverage-bar{display:grid!important;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px}.skill-ai-coverage-bar>span{grid-column:1/-1}.skill-ai-coverage-bar>div{height:7px;margin-top:8px;border-radius:999px;background:var(--adm-border);overflow:hidden}.skill-ai-coverage-bar i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--adm-accent),#2abf9e)}.skill-ai-coverage-bar strong{font-size:13px;margin-top:7px}
+.skill-ai-note{padding:11px 13px;border:1px solid var(--adm-border);border-radius:11px;background:color-mix(in srgb,var(--adm-accent) 7%,var(--adm-surface));font-size:10px;line-height:1.5;color:var(--adm-muted)}
+.skill-ai-note.is-warning{border-color:#d2ae4a;background:#fff6d9;color:#755810}.skill-ai-note.is-success{border-color:#68b895;background:#e8f7f0;color:#245f49}
+body.admin-dark-mode .skill-ai-note.is-warning{border-color:#655823;background:#332d18;color:#e7cc73}body.admin-dark-mode .skill-ai-note.is-success{border-color:#2c624d;background:#173128;color:#95dfc0}
+.skill-ai-provider{min-width:170px;padding:10px 12px;border:1px solid var(--adm-border);border-radius:11px;background:var(--adm-surface-2);text-align:right}.skill-ai-provider span,.skill-ai-provider small{display:block;font-size:8px;color:var(--adm-muted)}.skill-ai-provider strong{display:block;margin:3px 0;font-size:12px;color:var(--adm-accent)}
+.skill-ai-observation{padding:11px 13px;border-left:3px solid var(--adm-accent);border-radius:8px;background:var(--adm-surface-2);font-size:10px;line-height:1.55;color:var(--adm-muted)}
+.skill-ai-suggestions{display:grid;gap:14px}.skill-ai-suggestion-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.skill-ai-suggestion{display:grid;gap:11px;padding:14px;border:1px solid var(--adm-border);border-radius:14px;background:var(--adm-surface-2);opacity:.68;transition:.15s ease}.skill-ai-suggestion.is-selected{opacity:1;border-color:color-mix(in srgb,var(--adm-accent) 70%,var(--adm-border));box-shadow:0 0 0 2px color-mix(in srgb,var(--adm-accent) 9%,transparent)}
+.skill-ai-suggestion-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.skill-ai-select{display:grid!important;grid-template-columns:20px 34px minmax(0,1fr);align-items:center;gap:8px;margin:0!important;cursor:pointer}.skill-ai-select>input{width:auto!important}.skill-ai-select strong{display:block;font-size:12px;color:var(--adm-text)}.skill-ai-select small{display:block;margin-top:2px;font-size:9px;color:var(--adm-muted)}
+.skill-ai-confidence{display:grid;grid-template-columns:auto minmax(80px,1fr) auto;align-items:center;gap:8px}.skill-ai-confidence span,.skill-ai-confidence strong{font-size:9px;color:var(--adm-muted)}.skill-ai-confidence>div{height:6px;border-radius:999px;background:var(--adm-border);overflow:hidden}.skill-ai-confidence i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#3ea8c3,#28b78d)}
+.skill-ai-reason{margin:0;font-size:10px;line-height:1.5;color:var(--adm-muted)}.skill-ai-new-help{display:block;padding:8px 9px;border-radius:9px;background:color-mix(in srgb,#e7aa36 12%,transparent);font-size:9px;line-height:1.4;color:var(--adm-muted)}
+.skill-ai-apply-bar{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:14px 16px;border:1px solid var(--adm-border);border-radius:13px;background:var(--adm-surface)}.skill-ai-apply-bar>div{display:grid;grid-template-columns:auto auto;align-items:center;gap:2px 10px}.skill-ai-apply-bar span{font-size:9px;text-transform:uppercase;font-weight:800;color:var(--adm-muted)}.skill-ai-apply-bar strong{font-size:17px;color:var(--adm-text)}.skill-ai-apply-bar small{grid-column:1/-1;font-size:9px;color:var(--adm-muted)}.skill-ai-apply-bar>div.is-valid strong{color:#21845f}.skill-ai-apply-bar>div.is-warning strong{color:#b27b19}
+.skill-manual-divider{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:22px 0 13px;padding-bottom:9px;border-bottom:1px solid var(--adm-border)}.skill-manual-divider span{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--adm-accent)}.skill-manual-divider p{margin:0;font-size:9px;color:var(--adm-muted)}
+.skill-ai-origin{display:grid;grid-template-columns:auto auto;gap:3px 8px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--adm-accent) 28%,var(--adm-border));border-radius:10px;background:color-mix(in srgb,var(--adm-accent) 6%,var(--adm-surface-2))}.skill-ai-origin span{font-size:9px;font-weight:900;color:var(--adm-accent)}.skill-ai-origin b{font-size:9px;text-align:right;color:var(--adm-muted)}.skill-ai-origin small{grid-column:1/-1;font-size:9px;line-height:1.45;color:var(--adm-muted)}
+@media(max-width:1000px){.skill-ai-coverage{grid-template-columns:repeat(3,1fr)}.skill-ai-coverage-bar{grid-column:1/-1}.skill-ai-suggestion-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.skill-ai-head,.skill-ai-results-head,.skill-ai-apply-bar,.skill-manual-divider{flex-direction:column;align-items:stretch}.skill-ai-provider{text-align:left}.skill-ai-coverage{grid-template-columns:1fr 1fr}.skill-ai-coverage-bar{grid-column:1/-1}.skill-ai-action-form button,.skill-ai-apply-bar button{width:100%}}

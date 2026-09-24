@@ -170,6 +170,13 @@ class="<?php echo menuActivo('/admin/learning/logros/'); ?>"
 </a>
 
 <a
+href="/DEVIOZ-VIDEOS/admin/learning/skills/listar.php"
+class="<?php echo menuActivo('/admin/learning/skills/'); ?>"
+>
+🧩 Skills
+</a>
+
+<a
 href="/DEVIOZ-VIDEOS/admin/learning/seguimiento.php"
 class="<?php echo menuActivo('/admin/learning/seguimiento.php'); ?>"
 >
