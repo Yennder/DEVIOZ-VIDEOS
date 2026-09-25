@@ -36,6 +36,16 @@ class TranscripcionController
         return $this->model->encolar($idVideo, $forzar, $idioma, $modelo);
     }
 
+    public function recuperarInterrumpidos(): int
+    {
+        return $this->model->recuperarInterrumpidos();
+    }
+
+    public function reintentarInterrumpida(int $idVideo): array
+    {
+        return $this->model->reintentarInterrumpida($idVideo);
+    }
+
     public function guardarCorrecciones(int $idVideo, array $textos): void
     {
         $this->model->actualizarTextosSegmentos($idVideo, $textos);

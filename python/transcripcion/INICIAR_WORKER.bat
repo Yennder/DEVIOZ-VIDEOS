@@ -10,7 +10,8 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 echo =============================================
-echo TECHFLIX V3 - WORKER LOCAL
+echo TECHFLIX V3.3 - WORKER LOCAL
+echo Los trabajos interrumpidos se recuperan solos.
 echo Cierra esta ventana para detenerlo.
 echo =============================================
 ".venv\Scripts\python.exe" worker.py --daemon --device cpu --compute-type int8

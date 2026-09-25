@@ -1,21 +1,46 @@
 from __future__ import annotations
 
 import argparse
+import atexit
+import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
 import pymysql
 from faster_whisper import WhisperModel
 
+
+def configure_utf8_streams() -> None:
+    """Force UTF-8 for redirected logs on Windows.
+
+    Titles may contain emoji or other Unicode characters. Windows can otherwise
+    create stdout/stderr using a legacy code page (for example cp1252), which
+    raises UnicodeEncodeError before transcription even starts.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+        except Exception:
+            pass
+
+
+configure_utf8_streams()
+
 ROOT = Path(__file__).resolve().parents[2]
 UPLOADS = ROOT / "uploads" / "videos"
 SUBTITULOS = ROOT / "uploads" / "subtitulos"
+RUNTIME = Path(__file__).resolve().parent / "runtime"
+STATUS_FILE = RUNTIME / "worker_status.json"
 
 DB_HOST = os.getenv("DEVIOZ_DB_HOST", "localhost")
 DB_NAME = os.getenv("DEVIOZ_DB_NAME", "devioz_videos")
@@ -27,6 +52,121 @@ DEFAULT_COMPUTE = os.getenv("DEVIOZ_WHISPER_COMPUTE_TYPE", "int8")
 FFMPEG_BIN = os.getenv("DEVIOZ_FFMPEG_BIN", "") or shutil.which("ffmpeg") or ""
 
 _model_cache: Dict[Tuple[str, str, str], WhisperModel] = {}
+STOP_REQUESTED = False
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+
+
+def pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+
+
+def read_status() -> dict:
+    try:
+        if not STATUS_FILE.is_file():
+            return {}
+        return json.loads(STATUS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def another_worker_active() -> bool:
+    status = read_status()
+    pid = int(status.get("pid") or 0)
+    heartbeat = int(status.get("heartbeat_ts") or 0)
+    state = str(status.get("state") or "")
+    if pid == os.getpid():
+        return False
+    return state in {"active", "processing"} and (time.time() - heartbeat) <= 15 and pid_alive(pid)
+
+
+class WorkerRuntime:
+    def __init__(self, device: str, compute_type: str):
+        self.device = device
+        self.compute_type = compute_type
+        self.started_at = now_iso()
+        self._lock = threading.Lock()
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._state = {
+            "state": "active",
+            "message": "Esperando trabajos pendientes.",
+            "current_job": None,
+            "current_video": None,
+            "current_title": "",
+            "model": "",
+        }
+
+    def start(self):
+        RUNTIME.mkdir(parents=True, exist_ok=True)
+        self.write()
+        self._thread = threading.Thread(target=self._loop, name="techflix-heartbeat", daemon=True)
+        self._thread.start()
+
+    def _loop(self):
+        while not self._stop.wait(4.0):
+            self.write()
+
+    def set(self, **kwargs):
+        with self._lock:
+            self._state.update(kwargs)
+        self.write()
+
+    def write(self):
+        RUNTIME.mkdir(parents=True, exist_ok=True)
+        with self._lock:
+            data = dict(self._state)
+        data.update(
+            {
+                "pid": os.getpid(),
+                "heartbeat_ts": int(time.time()),
+                "heartbeat_at": now_iso(),
+                "started_at": self.started_at,
+                "device": self.device,
+                "compute_type": self.compute_type,
+                "platform": sys.platform,
+            }
+        )
+        temp = STATUS_FILE.with_suffix(".tmp")
+        try:
+            temp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+            temp.replace(STATUS_FILE)
+        except Exception:
+            pass
+
+    def stop(self, message: str = "Worker detenido."):
+        self._stop.set()
+        with self._lock:
+            self._state.update(
+                {
+                    "state": "stopped",
+                    "message": message,
+                    "current_job": None,
+                    "current_video": None,
+                    "current_title": "",
+                }
+            )
+        self.write()
+
+
+runtime: WorkerRuntime | None = None
+
+
+def request_stop(signum=None, frame=None):
+    global STOP_REQUESTED
+    STOP_REQUESTED = True
+    if runtime is not None:
+        runtime.set(message="Detencion solicitada. Finalizando el ciclo actual...")
 
 
 def db_connect():
@@ -41,10 +181,53 @@ def db_connect():
     )
 
 
+def recover_interrupted_jobs(conn) -> int:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id_trabajo, id_transcripcion
+            FROM transcripcion_trabajos
+            WHERE estado='procesando'
+            FOR UPDATE
+            """
+        )
+        rows = cur.fetchall()
+        if not rows:
+            conn.rollback()
+            return 0
+
+        job_ids = [int(row["id_trabajo"]) for row in rows]
+        trans_ids = sorted({int(row["id_transcripcion"]) for row in rows})
+        job_marks = ",".join(["%s"] * len(job_ids))
+        trans_marks = ",".join(["%s"] * len(trans_ids))
+        cur.execute(
+            f"""
+            UPDATE transcripcion_trabajos
+            SET estado='pendiente', progreso=0, mensaje_error=NULL,
+                fecha_inicio=NULL, fecha_fin=NULL
+            WHERE id_trabajo IN ({job_marks})
+            """,
+            job_ids,
+        )
+        cur.execute(
+            f"""
+            UPDATE video_transcripciones
+            SET estado='pendiente', progreso=0, mensaje_error=NULL,
+                fecha_inicio_proceso=NULL, fecha_fin_proceso=NULL
+            WHERE id_transcripcion IN ({trans_marks})
+            """,
+            trans_ids,
+        )
+    conn.commit()
+    return len(job_ids)
+
+
 def get_model(model_name: str, device: str, compute_type: str) -> WhisperModel:
     key = (model_name, device, compute_type)
     if key not in _model_cache:
-        print(f"[TECHFLIX] Cargando modelo {model_name} ({device}/{compute_type})...")
+        if runtime is not None:
+            runtime.set(model=model_name, message=f"Cargando modelo {model_name}...")
+        print(f"[TECHFLIX] Cargando modelo {model_name} ({device}/{compute_type})...", flush=True)
         _model_cache[key] = WhisperModel(model_name, device=device, compute_type=compute_type)
     return _model_cache[key]
 
@@ -101,6 +284,30 @@ def update_progress(conn, job_id: int, trans_id: int, progress: int):
         cur.execute(
             "UPDATE video_transcripciones SET progreso=%s WHERE id_transcripcion=%s",
             (progress, trans_id),
+        )
+    conn.commit()
+    if runtime is not None:
+        runtime.set(message=f"Transcribiendo... {progress}%")
+
+
+def requeue_job(conn, job_id: int, trans_id: int):
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE transcripcion_trabajos
+            SET estado='pendiente', progreso=0, mensaje_error=NULL, fecha_inicio=NULL, fecha_fin=NULL
+            WHERE id_trabajo=%s
+            """,
+            (job_id,),
+        )
+        cur.execute(
+            """
+            UPDATE video_transcripciones
+            SET estado='pendiente', progreso=0, mensaje_error=NULL,
+                fecha_inicio_proceso=NULL, fecha_fin_proceso=NULL
+            WHERE id_transcripcion=%s
+            """,
+            (trans_id,),
         )
     conn.commit()
 
@@ -194,10 +401,20 @@ def process_job(conn, job, device: str, compute_type: str):
     filename = os.path.basename(str(job["archivo_video"]))
     video_path = UPLOADS / filename
 
+    if runtime is not None:
+        runtime.set(
+            state="processing",
+            current_job=job_id,
+            current_video=video_id,
+            current_title=str(job.get("titulo") or ""),
+            model=model_name,
+            message="Preparando el video...",
+        )
+
     if not video_path.is_file():
         raise FileNotFoundError(f"No se encontro el video: {video_path}")
 
-    print(f"[TECHFLIX] Procesando #{video_id}: {job['titulo']}")
+    print(f"[TECHFLIX] Procesando #{video_id}: {job['titulo']}", flush=True)
     update_progress(conn, job_id, trans_id, 3)
 
     input_path, temp_dir = maybe_extract_audio(video_path)
@@ -206,6 +423,8 @@ def process_job(conn, job, device: str, compute_type: str):
 
     model = get_model(model_name, device, compute_type)
     update_progress(conn, job_id, trans_id, 10)
+    if runtime is not None:
+        runtime.set(message="Modelo cargado. Decodificando audio; el primer segmento puede tardar unos segundos...")
 
     try:
         generated, info = model.transcribe(
@@ -216,10 +435,13 @@ def process_job(conn, job, device: str, compute_type: str):
         )
 
         duration = float(getattr(info, "duration", 0.0) or 0.0)
+        update_progress(conn, job_id, trans_id, 12)
         segments: List[dict] = []
         full_text: List[str] = []
 
         for index, segment in enumerate(generated, start=1):
+            if STOP_REQUESTED:
+                raise RuntimeError("Proceso detenido por el administrador. El trabajo sera recuperado al reiniciar.")
             text = str(segment.text or "").strip()
             if not text:
                 continue
@@ -229,11 +451,12 @@ def process_job(conn, job, device: str, compute_type: str):
             full_text.append(text)
 
             if duration > 0:
-                progress = 10 + int(min(1.0, end / duration) * 82)
+                progress = 12 + int(min(1.0, end / duration) * 80)
             else:
-                progress = min(92, 10 + len(segments))
-            if len(segments) % 4 == 0:
-                update_progress(conn, job_id, trans_id, progress)
+                progress = min(92, 12 + len(segments))
+            # Actualiza cada segmento: evita la sensacion de que el proceso se congelo
+            # durante varios minutos en 10% aunque Whisper siga trabajando.
+            update_progress(conn, job_id, trans_id, progress)
 
         if not segments:
             raise RuntimeError("El modelo no genero segmentos de voz para este video.")
@@ -273,7 +496,7 @@ def process_job(conn, job, device: str, compute_type: str):
                 (job_id,),
             )
         conn.commit()
-        print(f"[TECHFLIX] OK #{video_id}: {len(segments)} segmentos")
+        print(f"[TECHFLIX] OK #{video_id}: {len(segments)} segmentos", flush=True)
     finally:
         if temp_dir is not None:
             temp_dir.cleanup()
@@ -284,18 +507,47 @@ def run_once(device: str, compute_type: str) -> bool:
     try:
         job = next_job(conn)
         if not job:
+            if runtime is not None:
+                runtime.set(
+                    state="active",
+                    message="Esperando trabajos pendientes.",
+                    current_job=None,
+                    current_video=None,
+                    current_title="",
+                )
             return False
         try:
             process_job(conn, job, device, compute_type)
         except Exception as exc:
-            print(f"[TECHFLIX] ERROR #{job['id_video']}: {exc}", file=sys.stderr)
-            fail_job(conn, int(job["id_trabajo"]), int(job["id_transcripcion"]), str(exc))
+            print(f"[TECHFLIX] ERROR #{job['id_video']}: {exc}", file=sys.stderr, flush=True)
+            if STOP_REQUESTED:
+                requeue_job(conn, int(job["id_trabajo"]), int(job["id_transcripcion"]))
+            else:
+                fail_job(conn, int(job["id_trabajo"]), int(job["id_transcripcion"]), str(exc))
+        finally:
+            if runtime is not None:
+                runtime.set(
+                    state="active",
+                    message="Esperando trabajos pendientes.",
+                    current_job=None,
+                    current_video=None,
+                    current_title="",
+                )
         return True
     finally:
         conn.close()
 
 
+def recover_on_startup() -> int:
+    conn = db_connect()
+    try:
+        return recover_interrupted_jobs(conn)
+    finally:
+        conn.close()
+
+
 def main():
+    global runtime
     parser = argparse.ArgumentParser(description="Worker local de transcripcion para TechFlix Learning Lab")
     parser.add_argument("--once", action="store_true", help="Procesa como maximo un trabajo y termina")
     parser.add_argument("--daemon", action="store_true", help="Mantiene el worker esperando nuevos trabajos")
@@ -307,28 +559,49 @@ def main():
     if not args.once and not args.daemon:
         args.once = True
 
-    print("[TECHFLIX] Worker local de transcripcion")
-    print(f"[TECHFLIX] Proyecto: {ROOT}")
-    print(f"[TECHFLIX] BD: {DB_HOST}/{DB_NAME}")
-    print(f"[TECHFLIX] Dispositivo: {args.device} / {args.compute_type}")
-    print(f"[TECHFLIX] FFmpeg: {FFMPEG_BIN if FFMPEG_BIN else 'no detectado (se usara PyAV)'}")
-
-    if args.once:
-        if not run_once(args.device, args.compute_type):
-            print("[TECHFLIX] No hay trabajos pendientes.")
+    if args.daemon and another_worker_active():
+        print("[TECHFLIX] Ya existe un worker activo. No se iniciara una segunda instancia.", flush=True)
         return
 
-    while True:
-        try:
-            processed = run_once(args.device, args.compute_type)
-            if not processed:
-                time.sleep(max(1.0, args.interval))
-        except KeyboardInterrupt:
-            print("\n[TECHFLIX] Worker detenido por el usuario.")
-            break
-        except Exception as exc:
-            print(f"[TECHFLIX] Error del worker: {exc}", file=sys.stderr)
-            time.sleep(max(2.0, args.interval))
+    signal.signal(signal.SIGINT, request_stop)
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, request_stop)
+
+    runtime = WorkerRuntime(args.device, args.compute_type)
+    runtime.start()
+    atexit.register(lambda: runtime.stop("Worker finalizado.") if runtime is not None else None)
+
+    print("[TECHFLIX] Worker local de transcripcion V3.3", flush=True)
+    print(f"[TECHFLIX] Proyecto: {ROOT}", flush=True)
+    print(f"[TECHFLIX] BD: {DB_HOST}/{DB_NAME}", flush=True)
+    print(f"[TECHFLIX] Dispositivo: {args.device} / {args.compute_type}", flush=True)
+    print(f"[TECHFLIX] FFmpeg: {FFMPEG_BIN if FFMPEG_BIN else 'no detectado (se usara PyAV)'}", flush=True)
+
+    try:
+        recovered = recover_on_startup()
+        if recovered:
+            print(f"[TECHFLIX] Recuperados {recovered} trabajo(s) interrumpidos.", flush=True)
+            runtime.set(message=f"Se recuperaron {recovered} trabajo(s) interrumpidos.")
+
+        if args.once:
+            if not run_once(args.device, args.compute_type):
+                print("[TECHFLIX] No hay trabajos pendientes.", flush=True)
+            return
+
+        while not STOP_REQUESTED:
+            try:
+                processed = run_once(args.device, args.compute_type)
+                if not processed:
+                    time.sleep(max(1.0, args.interval))
+            except KeyboardInterrupt:
+                request_stop()
+            except Exception as exc:
+                print(f"[TECHFLIX] Error del worker: {exc}", file=sys.stderr, flush=True)
+                runtime.set(state="active", message=f"Error temporal: {str(exc)[:180]}")
+                time.sleep(max(2.0, args.interval))
+    finally:
+        if runtime is not None:
+            runtime.stop("Worker detenido.")
 
 
 if __name__ == "__main__":

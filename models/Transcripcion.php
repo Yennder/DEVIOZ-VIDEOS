@@ -44,7 +44,11 @@ class Transcripcion
                 vt.mensaje_error,
                 vt.vtt_archivo,
                 vt.fecha_actualizacion,
-                (SELECT COUNT(*) FROM video_transcripcion_segmentos seg WHERE seg.id_transcripcion = vt.id_transcripcion) AS segmentos
+                (SELECT COUNT(*) FROM video_transcripcion_segmentos seg WHERE seg.id_transcripcion = vt.id_transcripcion) AS segmentos,
+                (SELECT tj.estado FROM transcripcion_trabajos tj WHERE tj.id_video = v.id_video ORDER BY tj.id_trabajo DESC LIMIT 1) AS trabajo_estado,
+                (SELECT tj.progreso FROM transcripcion_trabajos tj WHERE tj.id_video = v.id_video ORDER BY tj.id_trabajo DESC LIMIT 1) AS trabajo_progreso,
+                (SELECT tj.fecha_actualizacion FROM transcripcion_trabajos tj WHERE tj.id_video = v.id_video ORDER BY tj.id_trabajo DESC LIMIT 1) AS trabajo_actualizacion,
+                (SELECT tj.intentos FROM transcripcion_trabajos tj WHERE tj.id_video = v.id_video ORDER BY tj.id_trabajo DESC LIMIT 1) AS trabajo_intentos
             FROM videos v
             INNER JOIN categorias c ON c.id_categoria = v.id_categoria
             LEFT JOIN series s ON s.id_serie = v.id_serie
@@ -205,6 +209,100 @@ class Transcripcion
                 ':video' => $idVideo,
                 ':transcripcion' => $idTranscripcion,
             ]);
+
+            $this->conexion->commit();
+            return $this->obtenerPorVideo($idVideo) ?? [];
+        } catch (Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function recuperarInterrumpidos(): int
+    {
+        if (!$this->tablasDisponibles()) {
+            return 0;
+        }
+
+        $this->conexion->beginTransaction();
+        try {
+            $stmt = $this->conexion->query("
+                SELECT id_trabajo, id_transcripcion
+                FROM transcripcion_trabajos
+                WHERE estado = 'procesando'
+                FOR UPDATE
+            ");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (!$rows) {
+                $this->conexion->commit();
+                return 0;
+            }
+
+            $jobIds = array_map(static fn(array $row): int => (int)$row['id_trabajo'], $rows);
+            $transIds = array_values(array_unique(array_map(static fn(array $row): int => (int)$row['id_transcripcion'], $rows)));
+
+            $jobPlaceholders = implode(',', array_fill(0, count($jobIds), '?'));
+            $transPlaceholders = implode(',', array_fill(0, count($transIds), '?'));
+
+            $stmtJobs = $this->conexion->prepare("
+                UPDATE transcripcion_trabajos
+                SET estado='pendiente', progreso=0, mensaje_error=NULL, fecha_inicio=NULL, fecha_fin=NULL
+                WHERE id_trabajo IN ($jobPlaceholders)
+            ");
+            $stmtJobs->execute($jobIds);
+
+            $stmtTrans = $this->conexion->prepare("
+                UPDATE video_transcripciones
+                SET estado='pendiente', progreso=0, mensaje_error=NULL, fecha_inicio_proceso=NULL, fecha_fin_proceso=NULL
+                WHERE id_transcripcion IN ($transPlaceholders)
+            ");
+            $stmtTrans->execute($transIds);
+
+            $this->conexion->commit();
+            return count($jobIds);
+        } catch (Throwable $e) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public function reintentarInterrumpida(int $idVideo): array
+    {
+        if (!$this->tablasDisponibles()) {
+            throw new RuntimeException('Primero importa database/migracion_transcripcion_v3.sql.');
+        }
+
+        $actual = $this->obtenerPorVideo($idVideo);
+        if (!$actual) {
+            throw new RuntimeException('No existe una transcripcion asociada a este video.');
+        }
+
+        $idTranscripcion = (int)$actual['id_transcripcion'];
+        $this->conexion->beginTransaction();
+        try {
+            $stmtCancel = $this->conexion->prepare("
+                UPDATE transcripcion_trabajos
+                SET estado='cancelado', fecha_fin=NOW()
+                WHERE id_video=:video AND estado IN ('pendiente','procesando')
+            ");
+            $stmtCancel->execute([':video' => $idVideo]);
+
+            $stmtTrans = $this->conexion->prepare("
+                UPDATE video_transcripciones
+                SET estado='pendiente', progreso=0, mensaje_error=NULL, fecha_inicio_proceso=NULL, fecha_fin_proceso=NULL
+                WHERE id_transcripcion=:id
+            ");
+            $stmtTrans->execute([':id' => $idTranscripcion]);
+
+            $stmtJob = $this->conexion->prepare("
+                INSERT INTO transcripcion_trabajos (id_video, id_transcripcion, estado, progreso)
+                VALUES (:video, :transcripcion, 'pendiente', 0)
+            ");
+            $stmtJob->execute([':video' => $idVideo, ':transcripcion' => $idTranscripcion]);
 
             $this->conexion->commit();
             return $this->obtenerPorVideo($idVideo) ?? [];

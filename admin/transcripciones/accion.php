@@ -17,7 +17,7 @@ $idiomaDefault = (string)($transcripcionConfig['idioma'] ?? 'es');
 $idVideo = filter_input(INPUT_POST, 'id_video', FILTER_VALIDATE_INT);
 $accion = trim($_POST['accion'] ?? '');
 
-if (!in_array($accion, ['generar','regenerar','generar_todos'], true)) {
+if (!in_array($accion, ['generar','regenerar','generar_todos','reintentar'], true)) {
     header('Location: listar.php?error=' . urlencode('Solicitud invalida.'));
     exit;
 }
@@ -38,6 +38,12 @@ try {
 
     if (!$idVideo) {
         throw new RuntimeException('Video invalido.');
+    }
+
+    if ($accion === 'reintentar') {
+        $controller->reintentarInterrumpida((int)$idVideo);
+        header('Location: listar.php?msg=' . urlencode('Trabajo interrumpido devuelto a la cola.'));
+        exit;
     }
 
     $controller->encolar((int)$idVideo, $accion === 'regenerar', $idiomaDefault, $modeloDefault);
