@@ -20,6 +20,10 @@ class SkillController
     public function guardarSkillsCurso($idCurso,$ids,$pesos,$niveles){ return $this->modelo->guardarSkillsCurso((int)$idCurso,(array)$ids,(array)$pesos,(array)$niveles); }
     public function contextoCursoIA($idCurso){ return $this->modelo->contextoCursoParaIA((int)$idCurso); }
     public function perfilUsuario($idUsuario){ return $this->modelo->perfilUsuario((int)$idUsuario); }
+    public function reporteSkillsAdmin($buscar='', $idSkill=0, $nivel='', $evaluado=''){ return $this->modelo->reporteSkillsAdmin((string)$buscar,(int)$idSkill,(string)$nivel,(string)$evaluado); }
+    public function perfilUsuarioAdmin($idUsuario){ return $this->modelo->perfilUsuarioAdmin((int)$idUsuario); }
+    public function datosEvaluacionSkillAdmin($idUsuario,$idSkill){ return $this->modelo->datosEvaluacionSkillAdmin((int)$idUsuario,(int)$idSkill); }
+    public function guardarEvaluacionManual($idUsuario,$idSkill,$idEvaluador,$datos){ return $this->modelo->guardarEvaluacionManual((int)$idUsuario,(int)$idSkill,(int)$idEvaluador,(array)$datos); }
 
     public function analizarCursoIA($idCurso): array
     {

@@ -667,4 +667,294 @@ class Skill
         $stmt->execute([':valor'=>$valor, ':valor2'=>$this->generarCodigo($valor)]);
         return (int)($stmt->fetchColumn() ?: 0);
     }
+
+    /**
+     * Lista trabajadores activos para los reportes de competencias.
+     */
+    public function usuariosSkillsAdmin(string $buscar = ''): array
+    {
+        $sql = "SELECT id_usuario,nombre,email FROM usuarios WHERE rol='usuario' AND estado=1";
+        $params = [];
+        if ($buscar !== '') {
+            $sql .= " AND (nombre LIKE :buscar OR email LIKE :buscar2)";
+            $params[':buscar'] = '%' . $buscar . '%';
+            $params[':buscar2'] = '%' . $buscar . '%';
+        }
+        $sql .= " ORDER BY nombre ASC";
+        $stmt = $this->conexion->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Devuelve la ultima evaluacion manual realizada para una skill del trabajador.
+     */
+    public function ultimaEvaluacionManual(int $idUsuario, int $idSkill): ?array
+    {
+        try {
+            $stmt = $this->conexion->prepare("
+                SELECT e.*, u.nombre AS evaluador_nombre
+                FROM learning_skill_evaluaciones e
+                INNER JOIN usuarios u ON u.id_usuario=e.id_evaluador
+                WHERE e.id_usuario=:usuario AND e.id_skill=:skill
+                ORDER BY e.fecha_evaluacion DESC,e.id_skill_evaluacion DESC
+                LIMIT 1
+            ");
+            $stmt->execute([':usuario'=>$idUsuario, ':skill'=>$idSkill]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (PDOException $e) {
+            if ((string)$e->getCode() === '42S02') {
+                return null;
+            }
+            throw $e;
+        }
+    }
+
+    public function historialEvaluacionesManual(int $idUsuario, int $idSkill): array
+    {
+        try {
+            $stmt = $this->conexion->prepare("
+                SELECT e.*, u.nombre AS evaluador_nombre
+                FROM learning_skill_evaluaciones e
+                INNER JOIN usuarios u ON u.id_usuario=e.id_evaluador
+                WHERE e.id_usuario=:usuario AND e.id_skill=:skill
+                ORDER BY e.fecha_evaluacion DESC,e.id_skill_evaluacion DESC
+            ");
+            $stmt->execute([':usuario'=>$idUsuario, ':skill'=>$idSkill]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            if ((string)$e->getCode() === '42S02') {
+                return [];
+            }
+            throw $e;
+        }
+    }
+
+    public function guardarEvaluacionManual(int $idUsuario, int $idSkill, int $idEvaluador, array $datos): int
+    {
+        $puntaje = round((float)($datos['puntaje'] ?? -1), 2);
+        if ($puntaje < 0 || $puntaje > 100) {
+            throw new InvalidArgumentException('El puntaje debe estar entre 0 y 100.');
+        }
+
+        $nivel = strtolower($this->texto($datos['nivel'] ?? '', 20));
+        if (!in_array($nivel, ['basico','intermedio','avanzado'], true)) {
+            throw new InvalidArgumentException('Selecciona un nivel valido.');
+        }
+
+        $comentario = $this->texto($datos['comentario'] ?? '', 1000);
+        if ($comentario === '') {
+            throw new InvalidArgumentException('Agrega un comentario breve que sustente la evaluacion.');
+        }
+
+        $stmt = $this->conexion->prepare("SELECT COUNT(*) FROM usuarios WHERE id_usuario=:id AND rol='usuario' AND estado=1");
+        $stmt->execute([':id'=>$idUsuario]);
+        if (!(int)$stmt->fetchColumn()) {
+            throw new InvalidArgumentException('El trabajador no esta disponible.');
+        }
+        if (!$this->buscar($idSkill)) {
+            throw new InvalidArgumentException('La skill seleccionada no existe.');
+        }
+
+        $stmt = $this->conexion->prepare("
+            INSERT INTO learning_skill_evaluaciones
+            (id_usuario,id_skill,id_evaluador,puntaje,nivel,comentario)
+            VALUES (:usuario,:skill,:evaluador,:puntaje,:nivel,:comentario)
+        ");
+        $stmt->execute([
+            ':usuario'=>$idUsuario,
+            ':skill'=>$idSkill,
+            ':evaluador'=>$idEvaluador,
+            ':puntaje'=>$puntaje,
+            ':nivel'=>$nivel,
+            ':comentario'=>$comentario,
+        ]);
+        return (int)$this->conexion->lastInsertId();
+    }
+
+    private function ultimasEvaluacionesManualMapa(array $idsUsuarios = []): array
+    {
+        $mapa = [];
+        try {
+            $sql = "
+                SELECT e.*, ev.nombre AS evaluador_nombre
+                FROM learning_skill_evaluaciones e
+                INNER JOIN (
+                    SELECT id_usuario,id_skill,MAX(id_skill_evaluacion) AS ultimo_id
+                    FROM learning_skill_evaluaciones
+                    GROUP BY id_usuario,id_skill
+                ) ult ON ult.ultimo_id=e.id_skill_evaluacion
+                INNER JOIN usuarios ev ON ev.id_usuario=e.id_evaluador
+            ";
+            $params = [];
+            if ($idsUsuarios) {
+                $marcas = [];
+                foreach (array_values($idsUsuarios) as $i => $id) {
+                    $key = ':u' . $i;
+                    $marcas[] = $key;
+                    $params[$key] = (int)$id;
+                }
+                $sql .= " WHERE e.id_usuario IN (" . implode(',', $marcas) . ")";
+            }
+            $stmt = $this->conexion->prepare($sql);
+            $stmt->execute($params);
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $mapa[(int)$row['id_usuario'] . ':' . (int)$row['id_skill']] = $row;
+            }
+        } catch (PDOException $e) {
+            if ((string)$e->getCode() !== '42S02') {
+                throw $e;
+            }
+        }
+        return $mapa;
+    }
+
+    /**
+     * Reporte general de competencias para administracion.
+     */
+    public function reporteSkillsAdmin(string $buscar = '', int $idSkill = 0, string $nivel = '', string $evaluado = ''): array
+    {
+        $usuarios = $this->usuariosSkillsAdmin($buscar);
+        $idsUsuarios = array_map(static fn(array $u): int => (int)$u['id_usuario'], $usuarios);
+        $manuales = $this->ultimasEvaluacionesManualMapa($idsUsuarios);
+        $filas = [];
+        $usuariosConSkills = [];
+        $skillsPresentes = [];
+        $sumaAuto = 0.0;
+        $evaluaciones = 0;
+
+        foreach ($usuarios as $usuario) {
+            $perfil = $this->perfilUsuario((int)$usuario['id_usuario']);
+            foreach ($perfil['skills'] as $skill) {
+                if ($idSkill > 0 && (int)$skill['id_skill'] !== $idSkill) {
+                    continue;
+                }
+                if ($nivel !== '' && (string)$skill['nivel'] !== $nivel) {
+                    continue;
+                }
+                $key = (int)$usuario['id_usuario'] . ':' . (int)$skill['id_skill'];
+                $manual = $manuales[$key] ?? null;
+                if ($evaluado === 'si' && !$manual) {
+                    continue;
+                }
+                if ($evaluado === 'no' && $manual) {
+                    continue;
+                }
+
+                $fila = [
+                    'id_usuario'=>(int)$usuario['id_usuario'],
+                    'nombre'=>(string)$usuario['nombre'],
+                    'email'=>(string)$usuario['email'],
+                    'id_skill'=>(int)$skill['id_skill'],
+                    'skill_nombre'=>(string)$skill['nombre'],
+                    'skill_icono'=>(string)$skill['icono'],
+                    'skill_categoria'=>(string)$skill['categoria'],
+                    'automatico'=>(float)$skill['porcentaje'],
+                    'nivel_automatico'=>(string)$skill['nivel'],
+                    'nivel_automatico_texto'=>(string)$skill['nivel_texto'],
+                    'nivel_objetivo_texto'=>(string)$skill['nivel_objetivo_texto'],
+                    'cursos_asociados'=>(int)$skill['cursos_asociados'],
+                    'cursos_completados'=>(int)$skill['cursos_completados'],
+                    'manual'=>$manual,
+                ];
+                $filas[] = $fila;
+                $usuariosConSkills[(int)$usuario['id_usuario']] = true;
+                $skillsPresentes[(int)$skill['id_skill']] = true;
+                $sumaAuto += (float)$skill['porcentaje'];
+                if ($manual) {
+                    $evaluaciones++;
+                }
+            }
+        }
+
+        usort($filas, static function(array $a, array $b): int {
+            $cmp = strcmp($a['nombre'], $b['nombre']);
+            return $cmp !== 0 ? $cmp : strcmp($a['skill_nombre'], $b['skill_nombre']);
+        });
+
+        return [
+            'filas'=>$filas,
+            'resumen'=>[
+                'trabajadores'=>count($usuariosConSkills),
+                'skills'=>count($skillsPresentes),
+                'promedio_automatico'=>$filas ? round($sumaAuto / count($filas), 1) : 0.0,
+                'evaluaciones_supervisor'=>$evaluaciones,
+            ],
+        ];
+    }
+
+    /**
+     * Vista individual para administracion, incluyendo la ultima validacion del supervisor.
+     */
+    public function perfilUsuarioAdmin(int $idUsuario): ?array
+    {
+        $stmt = $this->conexion->prepare("SELECT id_usuario,nombre,email FROM usuarios WHERE id_usuario=:id AND rol='usuario' LIMIT 1");
+        $stmt->execute([':id'=>$idUsuario]);
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$usuario) {
+            return null;
+        }
+
+        $perfil = $this->perfilUsuario($idUsuario);
+        $manuales = $this->ultimasEvaluacionesManualMapa([$idUsuario]);
+        $evaluadas = 0;
+        foreach ($perfil['skills'] as &$skill) {
+            $key = $idUsuario . ':' . (int)$skill['id_skill'];
+            $skill['evaluacion_supervisor'] = $manuales[$key] ?? null;
+            if ($skill['evaluacion_supervisor']) {
+                $evaluadas++;
+            }
+        }
+        unset($skill);
+        $perfil['usuario'] = $usuario;
+        $perfil['resumen']['evaluadas_supervisor'] = $evaluadas;
+        return $perfil;
+    }
+
+    public function datosEvaluacionSkillAdmin(int $idUsuario, int $idSkill): ?array
+    {
+        $perfil = $this->perfilUsuarioAdmin($idUsuario);
+        if (!$perfil) {
+            return null;
+        }
+        $skillCatalogo = $this->buscar($idSkill);
+        if (!$skillCatalogo) {
+            return null;
+        }
+
+        $skillPerfil = null;
+        foreach ($perfil['skills'] as $skill) {
+            if ((int)$skill['id_skill'] === $idSkill) {
+                $skillPerfil = $skill;
+                break;
+            }
+        }
+        if (!$skillPerfil) {
+            [$nivel, $nivelTexto] = $this->nivelDesdePorcentaje(0.0);
+            $skillPerfil = [
+                'id_skill'=>$idSkill,
+                'codigo'=>(string)$skillCatalogo['codigo'],
+                'nombre'=>(string)$skillCatalogo['nombre'],
+                'categoria'=>(string)$skillCatalogo['categoria'],
+                'descripcion'=>(string)($skillCatalogo['descripcion'] ?? ''),
+                'icono'=>(string)($skillCatalogo['icono'] ?: '🧩'),
+                'porcentaje'=>0.0,
+                'nivel'=>$nivel,
+                'nivel_texto'=>$nivelTexto,
+                'nivel_objetivo_texto'=>'Sin objetivo de curso',
+                'cursos_asociados'=>0,
+                'cursos_completados'=>0,
+                'cursos'=>[],
+                'evaluacion_supervisor'=>$this->ultimaEvaluacionManual($idUsuario, $idSkill),
+            ];
+        }
+
+        return [
+            'usuario'=>$perfil['usuario'],
+            'skill'=>$skillPerfil,
+            'historial'=>$this->historialEvaluacionesManual($idUsuario, $idSkill),
+        ];
+    }
+
 }

@@ -171,9 +171,16 @@ class="<?php echo menuActivo('/admin/learning/logros/'); ?>"
 
 <a
 href="/DEVIOZ-VIDEOS/admin/learning/skills/listar.php"
-class="<?php echo menuActivo('/admin/learning/skills/'); ?>"
+class="<?php echo (strpos($rutaActual, '/admin/learning/skills/') !== false && !preg_match('#/(reporte|trabajador|evaluar)\.php#', $rutaActual)) ? 'activo-menu' : ''; ?>"
 >
 🧩 Skills
+</a>
+
+<a
+href="/DEVIOZ-VIDEOS/admin/learning/skills/reporte.php"
+class="<?php echo preg_match('#/admin/learning/skills/(reporte|trabajador|evaluar)\.php#', $rutaActual) ? 'activo-menu' : ''; ?>"
+>
+📊 Reporte Skills
 </a>
 
 <a
