@@ -7226,3 +7226,79 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:"Manrope","Segoe UI
 @media(max-width:1180px){.skill-progress-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:900px){.skill-profile-grid{grid-template-columns:1fr}.skill-method-grid{grid-template-columns:1fr}.skill-evidence-item{grid-template-columns:1fr}.skill-evidence-values{justify-content:flex-start}}
 @media(max-width:620px){.skill-profile-card-head{grid-template-columns:42px 1fr}.skill-profile-icon{width:42px;height:42px}.skill-profile-level{grid-column:2;justify-self:start}.skill-progress-preview-grid{grid-template-columns:1fr}.skill-progress-preview-footer{justify-content:flex-start;flex-wrap:wrap}.skill-profile-meta{display:grid;grid-template-columns:1fr 1fr}.skill-evidence-values{display:grid;grid-template-columns:1fr 1fr}}
+
+/* =========================================================
+   TECHFLIX V4.2 - DEVIOZ AI + RAG
+========================================================= */
+.devioz-ai-context-switcher>div{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.devioz-ai-context-switcher button{
+    min-width:0;
+    line-height:1.2;
+}
+.ai-rag-sources{
+    margin-top:10px;
+    padding-top:9px;
+    border-top:1px solid var(--border);
+    display:grid;
+    gap:6px;
+}
+.ai-rag-sources-title{
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--text-soft);
+}
+.ai-rag-source{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    padding:7px 8px;
+    border:1px solid var(--border);
+    border-radius:9px;
+    background:var(--surface-2);
+    color:var(--text);
+    text-decoration:none;
+    transition:border-color .18s ease,transform .18s ease,background .18s ease;
+}
+.ai-rag-source:hover{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    transform:translateY(-1px);
+}
+.ai-rag-source-number{
+    width:23px;
+    height:23px;
+    flex:0 0 23px;
+    display:grid;
+    place-items:center;
+    border-radius:7px;
+    background:var(--accent-soft);
+    color:var(--accent-strong);
+    font-size:9px;
+    font-weight:900;
+}
+.ai-rag-source-copy{
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    line-height:1.2;
+}
+.ai-rag-source-copy strong{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:9px;
+    color:var(--text);
+}
+.ai-rag-source-copy small{
+    margin-top:3px;
+    font-size:8px;
+    color:var(--text-soft);
+}
+@media (max-width:480px){
+    .devioz-ai-context-switcher>div{grid-template-columns:1fr 1fr}
+}
+

@@ -1,11 +1,28 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
+import os
 import sys
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import numpy as np
+
+# Windows/XAMPP puede iniciar Python con una pagina de codigos que no soporta
+# tildes, n ni emojis presentes en titulos de videos. Forzamos UTF-8 para que
+# la salida JSON sea siempre valida para PHP.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+os.environ.setdefault("PYTHONUTF8", "1")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
 
 from common import db_connect, get_model_name, load_embedding_model, table_exists
 
@@ -74,8 +91,17 @@ def main() -> int:
             print(json.dumps(payload, ensure_ascii=False))
             return 0
 
-        model = load_embedding_model(model_name)
-        query_vector = model.encode([query], normalize_embeddings=True, convert_to_numpy=True)[0].astype(np.float32)
+        # sentence-transformers/Hugging Face pueden escribir avisos o barras de
+        # progreso. La respuesta de este script debe contener SOLO JSON en stdout.
+        _library_output = io.StringIO()
+        with redirect_stdout(_library_output), redirect_stderr(_library_output):
+            model = load_embedding_model(model_name)
+            query_vector = model.encode(
+                [query],
+                normalize_embeddings=True,
+                convert_to_numpy=True,
+                show_progress_bar=False,
+            )[0].astype(np.float32)
 
         scored: list[tuple[float, dict]] = []
         for row in rows:

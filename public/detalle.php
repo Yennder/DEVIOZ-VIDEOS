@@ -1433,6 +1433,8 @@ window.DEVIOZ_AI_CONTEXT = {
     mode: "general",
     videoId: <?php echo (int)$id; ?>,
     videoTitle: <?php echo json_encode((string)$video["titulo"], JSON_UNESCAPED_UNICODE); ?>,
+    courseId: <?php echo $learningContext ? (int)($learningContext["id_curso"] ?? 0) : 0; ?>,
+    courseTitle: <?php echo json_encode($learningContext ? (string)($learningContext["curso"] ?? "") : "", JSON_UNESCAPED_UNICODE); ?>,
     transcriptAvailable: <?php echo ($transcripcionVideo && ($transcripcionVideo["estado"] ?? "") === "completada" && !empty($transcripcionSegmentos)) ? "true" : "false"; ?>
 };
 </script>
@@ -1455,5 +1457,8 @@ window.DEVIOZ_INTERACTIONS = <?php echo json_encode([
 $deviozAiVideoId = (int)$id;
 $deviozAiVideoTitle = (string)$video["titulo"];
 $deviozAiVideoContextAvailable = (bool)($transcripcionVideo && ($transcripcionVideo["estado"] ?? "") === "completada" && !empty($transcripcionSegmentos));
+$deviozAiCourseId = $learningContext ? (int)($learningContext["id_curso"] ?? 0) : 0;
+$deviozAiCourseTitle = $learningContext ? (string)($learningContext["curso"] ?? "") : "";
+$deviozAiCourseContextAvailable = $deviozAiCourseId > 0;
 ?>
 <?php include "../includes/public_footer.php"; ?>

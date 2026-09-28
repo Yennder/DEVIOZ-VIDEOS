@@ -17,8 +17,44 @@ $nombreUsuario =
 $idUsuario =
     $_SESSION["id_usuario"] ?? 0;
 
+// V4.2: detectar si existe una base semantica utilizable.
+$deviozAiRagAvailable = false;
+if($aiDesbloqueada)
+{
+    try
+    {
+        require_once __DIR__ . "/../models/KnowledgeBase.php";
+        $knowledgeBaseAi = new KnowledgeBase();
+        $resumenKnowledgeAi = $knowledgeBaseAi->resumen();
+        $deviozAiRagAvailable = ((int)($resumenKnowledgeAi["chunks"] ?? 0)) > 0;
+    }
+    catch(Throwable $e)
+    {
+        $deviozAiRagAvailable = false;
+    }
+}
+
+$deviozAiVideoContextAvailable = !empty($deviozAiVideoContextAvailable);
+$deviozAiCourseContextAvailable = !empty($deviozAiCourseContextAvailable) && $deviozAiRagAvailable;
+$deviozAiCourseId = isset($deviozAiCourseId) ? (int)$deviozAiCourseId : 0;
+$deviozAiCourseTitle = isset($deviozAiCourseTitle) ? (string)$deviozAiCourseTitle : "";
+$deviozAiVideoId = isset($deviozAiVideoId) ? (int)$deviozAiVideoId : 0;
+$deviozAiVideoTitle = isset($deviozAiVideoTitle) ? (string)$deviozAiVideoTitle : "";
+$deviozAiShowContextSwitcher = $deviozAiVideoContextAvailable || $deviozAiCourseContextAvailable || $deviozAiRagAvailable;
+
 ?>
 
+
+
+<script>
+window.DEVIOZ_AI_CONTEXT = window.DEVIOZ_AI_CONTEXT || {};
+window.DEVIOZ_AI_CONTEXT.mode = window.DEVIOZ_AI_CONTEXT.mode || "general";
+window.DEVIOZ_AI_CONTEXT.videoId = window.DEVIOZ_AI_CONTEXT.videoId || <?php echo (int)$deviozAiVideoId; ?>;
+window.DEVIOZ_AI_CONTEXT.videoTitle = window.DEVIOZ_AI_CONTEXT.videoTitle || <?php echo json_encode($deviozAiVideoTitle, JSON_UNESCAPED_UNICODE); ?>;
+window.DEVIOZ_AI_CONTEXT.courseId = <?php echo (int)$deviozAiCourseId; ?> || window.DEVIOZ_AI_CONTEXT.courseId || 0;
+window.DEVIOZ_AI_CONTEXT.courseTitle = <?php echo json_encode($deviozAiCourseTitle, JSON_UNESCAPED_UNICODE); ?> || window.DEVIOZ_AI_CONTEXT.courseTitle || "";
+window.DEVIOZ_AI_CONTEXT.ragAvailable = <?php echo $deviozAiRagAvailable ? "true" : "false"; ?>;
+</script>
 
 
 <!-- =========================================
@@ -279,14 +315,22 @@ data-user-id="<?php echo (int)$idUsuario; ?>"
 
             </div>
 
-            <?php if(!empty($deviozAiVideoContextAvailable)): ?>
+            <?php if($deviozAiShowContextSwitcher): ?>
             <div class="devioz-ai-context-switcher" id="deviozAiContextSwitcher">
                 <span>Contexto de respuesta</span>
                 <div>
                     <button type="button" class="is-active" data-ai-context-mode="general">General</button>
+                    <?php if($deviozAiVideoContextAvailable): ?>
                     <button type="button" data-ai-context-mode="video">Este video</button>
+                    <?php endif; ?>
+                    <?php if($deviozAiCourseContextAvailable): ?>
+                    <button type="button" data-ai-context-mode="curso">Este curso</button>
+                    <?php endif; ?>
+                    <?php if($deviozAiRagAvailable): ?>
+                    <button type="button" data-ai-context-mode="techflix">TechFlix</button>
+                    <?php endif; ?>
                 </div>
-                <small>En modo Este video, DEVIOZ AI usa la transcripcion como fuente principal.</small>
+                <small id="deviozAiContextHelp">General responde con el asistente y el catalogo de la plataforma.</small>
             </div>
             <?php endif; ?>
 

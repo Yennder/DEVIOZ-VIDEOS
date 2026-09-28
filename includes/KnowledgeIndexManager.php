@@ -210,9 +210,32 @@ class KnowledgeIndexManager
             $code = 0;
             exec($command . ' 2>&1', $output, $code);
             $raw = trim(implode("\n", $output));
+
+            // La salida normal debe ser un unico JSON. Como proteccion adicional,
+            // si alguna libreria Python escribe un warning, recuperamos la ultima
+            // linea JSON valida en vez de romper toda la busqueda.
             $decoded = json_decode($raw, true);
+            if (!is_array($decoded) && $output) {
+                for ($i = count($output) - 1; $i >= 0; $i--) {
+                    $candidate = trim((string)$output[$i]);
+                    if ($candidate === '' || $candidate[0] !== '{') {
+                        continue;
+                    }
+                    $candidateDecoded = json_decode($candidate, true);
+                    if (is_array($candidateDecoded)) {
+                        $decoded = $candidateDecoded;
+                        break;
+                    }
+                }
+            }
+
             if ($code !== 0 || !is_array($decoded)) {
-                throw new RuntimeException($raw !== '' ? $raw : 'No se pudo ejecutar la busqueda semantica.');
+                $message = $raw !== '' ? $raw : 'No se pudo ejecutar la busqueda semantica.';
+                // Evita llenar la interfaz con trazas enormes de librerias.
+                if (mb_strlen($message) > 900) {
+                    $message = mb_substr($message, -900);
+                }
+                throw new RuntimeException($message);
             }
             if (empty($decoded['ok'])) {
                 throw new RuntimeException((string)($decoded['error'] ?? 'Busqueda semantica no disponible.'));

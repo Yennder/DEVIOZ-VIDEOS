@@ -2576,7 +2576,8 @@ function()
         function guardarMensajeHistorial(
             texto,
             tipo,
-            fecha
+            fecha,
+            fuentes = []
         )
         {
 
@@ -2596,7 +2597,12 @@ function()
                     fecha:
                         fecha
                         ||
-                        Date.now()
+                        Date.now(),
+
+                    fuentes:
+                        Array.isArray(fuentes)
+                        ? fuentes.slice(0, 6)
+                        : []
 
                 }
             );
@@ -2913,7 +2919,8 @@ function renderizarMarkdownBasico(texto)
             texto,
             tipo,
             guardar = true,
-            fecha = null
+            fecha = null,
+            fuentes = []
         )
         {
 
@@ -2976,6 +2983,11 @@ else
                 contenido
             );
 
+            agregarFuentesRag(
+                elemento,
+                Array.isArray(fuentes) ? fuentes : []
+            );
+
 
 
             // =========================================
@@ -3020,7 +3032,8 @@ else
                 guardarMensajeHistorial(
                     texto,
                     tipo,
-                    fechaMensaje
+                    fechaMensaje,
+                    fuentes
                 );
 
             }
@@ -3157,6 +3170,82 @@ else
 
 
         // =========================================
+        // FUENTES RAG V4.2
+        // =========================================
+
+        function agregarFuentesRag(elementoMensaje, fuentes)
+        {
+            if(!elementoMensaje || !Array.isArray(fuentes) || fuentes.length === 0)
+            {
+                return;
+            }
+
+            const contenedor = document.createElement("div");
+            contenedor.className = "ai-rag-sources";
+
+            const titulo = document.createElement("div");
+            titulo.className = "ai-rag-sources-title";
+            titulo.textContent = "Fuentes del contenido";
+            contenedor.appendChild(titulo);
+
+            fuentes.slice(0, 6).forEach(function(fuente, indice)
+            {
+                if(!fuente || typeof fuente !== "object") return;
+
+                const enlace = document.createElement("a");
+                enlace.className = "ai-rag-source";
+
+                const url = typeof fuente.url === "string" ? fuente.url : "";
+                if(url.startsWith("/DEVIOZ-VIDEOS/public/"))
+                {
+                    enlace.href = url;
+                }
+                else
+                {
+                    enlace.href = "#";
+                }
+
+                const numero = document.createElement("span");
+                numero.className = "ai-rag-source-number";
+                numero.textContent = String(indice + 1);
+
+                const copia = document.createElement("span");
+                copia.className = "ai-rag-source-copy";
+
+                const nombre = document.createElement("strong");
+                nombre.textContent = String(fuente.titulo || "Video");
+
+                const meta = document.createElement("small");
+                const tiempo = fuente.inicio ? String(fuente.inicio) : "00:00";
+                const tieneSimilitud = fuente.similitud !== null
+                    && fuente.similitud !== undefined
+                    && fuente.similitud !== ""
+                    && Number.isFinite(Number(fuente.similitud));
+                const similitud = tieneSimilitud
+                    ? " · " + Math.round(Number(fuente.similitud)) + "% similitud"
+                    : "";
+                meta.textContent = tiempo + similitud;
+
+                copia.appendChild(nombre);
+                copia.appendChild(meta);
+                enlace.appendChild(numero);
+                enlace.appendChild(copia);
+                contenedor.appendChild(enlace);
+            });
+
+            const hora = elementoMensaje.querySelector(".ai-message-time");
+            if(hora)
+            {
+                elementoMensaje.insertBefore(contenedor, hora);
+            }
+            else
+            {
+                elementoMensaje.appendChild(contenedor);
+            }
+        }
+
+
+        // =========================================
         // ESTADO DE CARGA
         // =========================================
 
@@ -3274,7 +3363,8 @@ else
                         false,
                         item.fecha
                         ||
-                        Date.now()
+                        Date.now(),
+                        Array.isArray(item.fuentes) ? item.fuentes : []
                     );
 
                 }
@@ -3433,6 +3523,11 @@ else
             video_id:
                 (window.DEVIOZ_AI_CONTEXT && window.DEVIOZ_AI_CONTEXT.videoId)
                     ? window.DEVIOZ_AI_CONTEXT.videoId
+                    : 0,
+
+            curso_id:
+                (window.DEVIOZ_AI_CONTEXT && window.DEVIOZ_AI_CONTEXT.courseId)
+                    ? window.DEVIOZ_AI_CONTEXT.courseId
                     : 0,
 
 
@@ -3603,7 +3698,10 @@ else
 
                 agregarMensaje(
                     datos.respuesta,
-                    "ai-message-system"
+                    "ai-message-system",
+                    true,
+                    null,
+                    Array.isArray(datos.fuentes) ? datos.fuentes : []
                 );
 
             }
@@ -4265,22 +4363,49 @@ document.addEventListener("DOMContentLoaded", function () {
     const context = window.DEVIOZ_AI_CONTEXT || null;
     const contextButtons = document.querySelectorAll("[data-ai-context-mode]");
     const aiInput = document.getElementById("deviozAiInput");
+    const contextHelp = document.getElementById("deviozAiContextHelp");
+
+    function aplicarModoContexto(mode, button) {
+        if (context) {
+            context.mode = mode;
+        }
+        contextButtons.forEach(function (item) {
+            item.classList.toggle("is-active", item === button);
+        });
+
+        const textos = {
+            general: {
+                placeholder: "Escribe una pregunta...",
+                help: "General responde con el asistente y el catalogo de la plataforma."
+            },
+            video: {
+                placeholder: "Pregunta sobre lo dicho en este video...",
+                help: "Este video usa su transcripcion o indice semantico como fuente principal."
+            },
+            curso: {
+                placeholder: "Pregunta sobre el contenido de este curso...",
+                help: "Este curso busca primero entre las lecciones indexadas del curso actual."
+            },
+            techflix: {
+                placeholder: "Pregunta sobre cualquier contenido de TechFlix...",
+                help: "TechFlix busca semanticamente entre todos los videos indexados."
+            }
+        };
+        const info = textos[mode] || textos.general;
+
+        if (aiInput) {
+            aiInput.placeholder = info.placeholder;
+            aiInput.focus();
+        }
+        if (contextHelp) {
+            contextHelp.textContent = info.help;
+        }
+    }
 
     contextButtons.forEach(function (button) {
         button.addEventListener("click", function () {
             const mode = button.getAttribute("data-ai-context-mode") || "general";
-            if (context) {
-                context.mode = mode;
-            }
-            contextButtons.forEach(function (item) {
-                item.classList.toggle("is-active", item === button);
-            });
-            if (aiInput) {
-                aiInput.placeholder = mode === "video"
-                    ? "Pregunta sobre lo dicho en este video..."
-                    : "Escribe una pregunta...";
-                aiInput.focus();
-            }
+            aplicarModoContexto(mode, button);
         });
     });
 
@@ -4409,3 +4534,34 @@ document.addEventListener('DOMContentLoaded', function () {
         if (event.key === 'Escape') closeNotifications();
     });
 });
+
+// =========================================
+// TECHFLIX V4.2 - ABRIR FUENTE EN TIMESTAMP
+// =========================================
+document.addEventListener("DOMContentLoaded", function () {
+    const video = document.getElementById("deviozVideoPlayer");
+    if (!video) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("t");
+    if (raw === null || raw === "") return;
+
+    const seconds = Number(raw);
+    if (!Number.isFinite(seconds) || seconds < 0) return;
+
+    const aplicarTiempo = function () {
+        try {
+            const maximo = Number.isFinite(Number(video.duration)) && Number(video.duration) > 0
+                ? Math.max(0, Number(video.duration) - 0.25)
+                : seconds;
+            video.currentTime = Math.min(seconds, maximo);
+        } catch (error) {}
+    };
+
+    if (video.readyState >= 1) {
+        aplicarTiempo();
+    } else {
+        video.addEventListener("loadedmetadata", aplicarTiempo, {once: true});
+    }
+});
+
