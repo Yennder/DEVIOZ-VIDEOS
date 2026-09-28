@@ -132,6 +132,15 @@ class="<?php echo menuActivo('/admin/transcripciones/'); ?>"
 
 </a>
 
+<a
+href="/DEVIOZ-VIDEOS/admin/conocimiento/index.php"
+class="<?php echo menuActivo('/admin/conocimiento/'); ?>"
+>
+
+🧠 Base de conocimiento
+
+</a>
+
 <div class="admin-nav-label">TECHFLIX LEARNING LAB</div>
 
 <a
