@@ -4784,3 +4784,308 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!document.hidden) refreshNotifications();
     });
 });
+
+// =========================================
+// TECHFLIX V4.3 - BUSCADOR INTELIGENTE
+// =========================================
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("smartGlobalSearchInput");
+    const dropdown = document.getElementById("smartSearchSuggestions");
+    if (input && dropdown) {
+        let timer = null;
+        let controller = null;
+
+        const close = function () {
+            dropdown.hidden = true;
+            dropdown.replaceChildren();
+        };
+
+        const render = function (items, query) {
+            dropdown.replaceChildren();
+            if (!Array.isArray(items) || items.length === 0) {
+                close();
+                return;
+            }
+
+            items.forEach(function (item) {
+                const link = document.createElement("a");
+                link.className = "smart-suggestion-item";
+                link.href = String(item.url || "#");
+                link.setAttribute("role", "option");
+
+                const icon = document.createElement("span");
+                icon.className = "smart-suggestion-icon";
+                icon.textContent = String(item.icono || "⌕");
+
+                const copy = document.createElement("span");
+                const title = document.createElement("strong");
+                const subtitle = document.createElement("small");
+                title.textContent = String(item.titulo || "");
+                subtitle.textContent = String(item.subtitulo || item.tipo || "");
+                copy.append(title, subtitle);
+                link.append(icon, copy);
+                dropdown.appendChild(link);
+            });
+
+            const all = document.createElement("a");
+            all.className = "smart-suggestion-all";
+            all.href = "/DEVIOZ-VIDEOS/public/buscar.php?q=" + encodeURIComponent(query);
+            all.textContent = "Ver todos los resultados →";
+            dropdown.appendChild(all);
+            dropdown.hidden = false;
+        };
+
+        const load = function () {
+            const query = input.value.trim();
+            if (query.length < 2) {
+                close();
+                return;
+            }
+            if (controller) controller.abort();
+            controller = new AbortController();
+            fetch("/DEVIOZ-VIDEOS/api/busqueda_sugerencias.php?q=" + encodeURIComponent(query), {
+                headers: {"Accept": "application/json"},
+                signal: controller.signal,
+                credentials: "same-origin"
+            })
+                .then(function (response) { return response.ok ? response.json() : Promise.reject(); })
+                .then(function (data) { if (data && data.ok) render(data.items || [], query); })
+                .catch(function (error) { if (!error || error.name !== "AbortError") close(); });
+        };
+
+        input.addEventListener("input", function () {
+            clearTimeout(timer);
+            timer = setTimeout(load, 260);
+        });
+        input.addEventListener("focus", function () {
+            if (input.value.trim().length >= 2 && dropdown.children.length) dropdown.hidden = false;
+        });
+        dropdown.addEventListener("click", function (event) { event.stopPropagation(); });
+        document.addEventListener("click", function (event) {
+            if (!dropdown.contains(event.target) && event.target !== input) close();
+        });
+        document.addEventListener("keydown", function (event) { if (event.key === "Escape") close(); });
+    }
+
+    const scope = document.getElementById("smartSearchScope");
+    const scopeForm = document.getElementById("smartScopeForm");
+    const hiddenId = document.getElementById("smartScopeId");
+    if (scope && scopeForm && hiddenId) {
+        const targets = Array.from(scopeForm.querySelectorAll(".smart-scope-target"));
+        const updateTargets = function () {
+            const value = scope.value;
+            targets.forEach(function (target) {
+                target.classList.toggle("is-visible", target.getAttribute("data-scope-target") === value);
+            });
+        };
+        scope.addEventListener("change", updateTargets);
+        updateTargets();
+
+        scopeForm.addEventListener("submit", function () {
+            const current = scope.value;
+            if (current === "global") {
+                hiddenId.value = "0";
+                return;
+            }
+            const select = scopeForm.querySelector('[data-scope-target="' + current + '"] select');
+            hiddenId.value = select ? String(select.value || "0") : "0";
+        });
+    }
+});
+
+// =========================================
+// TECHFLIX V4.3 - RESULTADOS SEMANTICOS ASINCRONOS
+// Motor persistente + AJAX para no bloquear la pagina completa.
+// =========================================
+document.addEventListener("DOMContentLoaded", function () {
+    const resultsHost = document.getElementById("smartSemanticResults");
+    if (!resultsHost) return;
+
+    const scopeForm = document.getElementById("smartScopeForm");
+    const scopeSelect = document.getElementById("smartSearchScope");
+    const hiddenId = document.getElementById("smartScopeId");
+    const countNode = document.getElementById("smartSearchCountValue");
+    const globalEmpty = document.getElementById("smartSearchGlobalEmpty");
+    let semanticController = null;
+
+    const baseCount = countNode ? Number(countNode.getAttribute("data-base-count") || "0") : 0;
+
+    const setTotal = function (semanticCount) {
+        if (countNode) countNode.textContent = String(baseCount + Number(semanticCount || 0));
+        if (globalEmpty) globalEmpty.hidden = (baseCount + Number(semanticCount || 0)) > 0;
+    };
+
+    const loading = function () {
+        resultsHost.replaceChildren();
+        const wrap = document.createElement("div");
+        wrap.className = "smart-semantic-loading";
+        wrap.setAttribute("role", "status");
+        const spinner = document.createElement("span");
+        spinner.className = "smart-semantic-spinner";
+        spinner.setAttribute("aria-hidden", "true");
+        const copy = document.createElement("div");
+        const strong = document.createElement("strong");
+        strong.textContent = "Buscando por significado...";
+        const small = document.createElement("small");
+        small.textContent = "La página sigue disponible mientras el motor semántico trabaja.";
+        copy.append(strong, small);
+        wrap.append(spinner, copy);
+        resultsHost.appendChild(wrap);
+    };
+
+    const renderEmpty = function () {
+        resultsHost.replaceChildren();
+        const empty = document.createElement("div");
+        empty.className = "empty-state empty-state-small";
+        const h = document.createElement("h3");
+        h.textContent = "No encontramos fragmentos suficientemente relacionados";
+        const p = document.createElement("p");
+        p.textContent = "Prueba otra forma de preguntar o amplía el ámbito a Todo TechFlix.";
+        empty.append(h, p);
+        resultsHost.appendChild(empty);
+        setTotal(0);
+    };
+
+    const renderError = function () {
+        resultsHost.replaceChildren();
+        const warning = document.createElement("div");
+        warning.className = "smart-search-warning";
+        warning.textContent = "La búsqueda dentro de los videos no está disponible en este momento.";
+        resultsHost.appendChild(warning);
+        setTotal(0);
+    };
+
+    const renderResults = function (items, elapsedMs) {
+        resultsHost.replaceChildren();
+        if (!Array.isArray(items) || items.length === 0) {
+            renderEmpty();
+            return;
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "smart-semantic-speed";
+        const ms = Number(elapsedMs || 0);
+        meta.textContent = ms > 0 ? "Motor semántico listo · " + Math.round(ms) + " ms" : "Motor semántico listo";
+        resultsHost.appendChild(meta);
+
+        const grid = document.createElement("div");
+        grid.className = "smart-semantic-grid";
+        items.forEach(function (item) {
+            const card = document.createElement("article");
+            card.className = "smart-semantic-card";
+
+            const top = document.createElement("div");
+            top.className = "smart-semantic-top";
+            const type = document.createElement("span");
+            type.className = "smart-result-type";
+            type.textContent = "Fragmento";
+            const score = document.createElement("strong");
+            score.textContent = String(item.score_percent || 0) + "%";
+            top.append(type, score);
+
+            const title = document.createElement("h3");
+            title.textContent = String(item.titulo || "Video");
+
+            const metaLine = document.createElement("div");
+            metaLine.className = "smart-semantic-meta";
+            const parts = [];
+            if (item.categoria) parts.push(String(item.categoria));
+            if (item.serie) parts.push(String(item.serie));
+            parts.push(String(item.inicio || "00:00") + " - " + String(item.fin || "00:00"));
+            metaLine.textContent = parts.join(" · ");
+
+            const text = document.createElement("p");
+            const rawText = String(item.texto || "");
+            text.textContent = rawText.length > 430 ? rawText.slice(0, 427) + "…" : rawText;
+
+            const link = document.createElement("a");
+            const seconds = Math.max(0, Math.round(Number(item.inicio_segundos || 0)));
+            link.href = "detalle.php?id=" + encodeURIComponent(String(item.id_video || 0)) + "&t=" + seconds;
+            link.textContent = "▶ Ir al momento";
+
+            card.append(top, title, metaLine, text, link);
+            grid.appendChild(card);
+        });
+        resultsHost.appendChild(grid);
+        setTotal(items.length);
+    };
+
+    const cleanScopeId = function () {
+        if (!scopeForm || !scopeSelect || !hiddenId) {
+            return Number(resultsHost.getAttribute("data-scope-id") || "0");
+        }
+        const current = scopeSelect.value;
+        if (current === "global") {
+            hiddenId.value = "0";
+            return 0;
+        }
+        const select = scopeForm.querySelector('[data-scope-target="' + current + '"] select');
+        const value = select ? Number(select.value || "0") : 0;
+        hiddenId.value = String(value);
+        return value;
+    };
+
+    const loadSemantic = function (query, scope, scopeId, updateUrl) {
+        query = String(query || "").trim();
+        if (query.length < 2) {
+            renderEmpty();
+            return;
+        }
+        scope = ["global", "curso", "serie", "video"].includes(scope) ? scope : "global";
+        scopeId = Number(scopeId || 0);
+        if (scope !== "global" && scopeId <= 0) scope = "global";
+
+        if (semanticController) semanticController.abort();
+        semanticController = new AbortController();
+        loading();
+
+        const params = new URLSearchParams({
+            q: query,
+            scope: scope,
+            scope_id: String(scopeId),
+            top_k: "14"
+        });
+
+        if (updateUrl) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("q", query);
+            url.searchParams.set("scope", scope);
+            if (scopeId > 0) url.searchParams.set("scope_id", String(scopeId));
+            else url.searchParams.delete("scope_id");
+            ["scope_id_curso", "scope_id_serie", "scope_id_video"].forEach(function (key) { url.searchParams.delete(key); });
+            window.history.replaceState({}, "", url.pathname + "?" + url.searchParams.toString());
+        }
+
+        fetch("/DEVIOZ-VIDEOS/api/busqueda_semantica.php?" + params.toString(), {
+            headers: {"Accept": "application/json"},
+            credentials: "same-origin",
+            signal: semanticController.signal
+        })
+            .then(function (response) { return response.ok ? response.json() : Promise.reject(new Error("semantic")); })
+            .then(function (data) {
+                if (!data || !data.ok) throw new Error("semantic");
+                resultsHost.setAttribute("data-scope", String(data.scope || scope));
+                resultsHost.setAttribute("data-scope-id", String(data.scope_id || scopeId));
+                renderResults(data.results || [], data.elapsed_ms || 0);
+            })
+            .catch(function (error) {
+                if (error && error.name === "AbortError") return;
+                renderError();
+            });
+    };
+
+    if (scopeForm && scopeSelect && hiddenId) {
+        scopeForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            const scopeId = cleanScopeId();
+            loadSemantic(resultsHost.getAttribute("data-query") || "", scopeSelect.value, scopeId, true);
+        });
+    }
+
+    loadSemantic(
+        resultsHost.getAttribute("data-query") || "",
+        resultsHost.getAttribute("data-scope") || "global",
+        Number(resultsHost.getAttribute("data-scope-id") || "0"),
+        false
+    );
+});

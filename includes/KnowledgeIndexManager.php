@@ -9,6 +9,10 @@ class KnowledgeIndexManager
     private string $logFile;
     private string $errorLogFile;
     private string $windowsLauncher;
+    private string $semanticLauncher;
+    private string $semanticLogFile;
+    private string $semanticErrorLogFile;
+    private int $semanticPort;
 
     public function __construct()
     {
@@ -19,6 +23,11 @@ class KnowledgeIndexManager
         $this->logFile = $this->runtimeDir . DIRECTORY_SEPARATOR . 'indexer.log';
         $this->errorLogFile = $this->runtimeDir . DIRECTORY_SEPARATOR . 'indexer-error.log';
         $this->windowsLauncher = $this->workerDir . DIRECTORY_SEPARATOR . 'start_indexer_hidden.vbs';
+        $this->semanticLauncher = $this->workerDir . DIRECTORY_SEPARATOR . 'start_semantic_server_hidden.vbs';
+        $this->semanticLogFile = $this->runtimeDir . DIRECTORY_SEPARATOR . 'semantic-server.log';
+        $this->semanticErrorLogFile = $this->runtimeDir . DIRECTORY_SEPARATOR . 'semantic-server-error.log';
+        $port = (int)(getenv('DEVIOZ_SEMANTIC_PORT') ?: 8765);
+        $this->semanticPort = ($port >= 1024 && $port <= 65535) ? $port : 8765;
     }
 
     public function status(): array
@@ -181,6 +190,27 @@ class KnowledgeIndexManager
         if (mb_strlen($query) > 500) {
             throw new RuntimeException('La consulta es demasiado larga.');
         }
+
+        // V4.3 optimizado: reutiliza un motor Python persistente que mantiene
+        // el modelo y los embeddings en memoria. Si por cualquier motivo el
+        // servicio local no puede iniciar, conservamos el buscador directo como
+        // respaldo para no perder funcionalidad.
+        try {
+            return $this->searchPersistent($query, $topK, $scope, $scopeId);
+        } catch (Throwable $persistentError) {
+            return $this->searchDirect($query, $topK, $scope, $scopeId);
+        }
+    }
+
+    private function searchDirect(string $query, int $topK = 6, string $scope = 'global', int $scopeId = 0): array
+    {
+        $query = trim($query);
+        if ($query === '') {
+            return [];
+        }
+        if (mb_strlen($query) > 500) {
+            throw new RuntimeException('La consulta es demasiado larga.');
+        }
         if (!$this->canExec()) {
             throw new RuntimeException('PHP no permite ejecutar la busqueda semantica local.');
         }
@@ -203,7 +233,7 @@ class KnowledgeIndexManager
                 . ' ' . escapeshellarg($script)
                 . ' --query-file ' . escapeshellarg($queryFile)
                 . ' --top-k ' . max(1, min(20, $topK))
-                . ' --scope ' . escapeshellarg(in_array($scope, ['global','video','curso'], true) ? $scope : 'global')
+                . ' --scope ' . escapeshellarg(in_array($scope, ['global','video','curso','serie'], true) ? $scope : 'global')
                 . ' --scope-id ' . max(0, $scopeId)
                 . ' --json';
             $output = [];
@@ -244,6 +274,139 @@ class KnowledgeIndexManager
         } finally {
             @unlink($queryFile);
         }
+    }
+
+    private function searchPersistent(string $query, int $topK, string $scope, int $scopeId): array
+    {
+        $this->ensureSemanticServer();
+        $scope = in_array($scope, ['global','video','curso','serie'], true) ? $scope : 'global';
+        $payload = [
+            'query' => $query,
+            'top_k' => max(1, min(20, $topK)),
+            'scope' => $scope,
+            'scope_id' => max(0, $scopeId),
+        ];
+        $decoded = $this->semanticHttpRequest('POST', '/search', $payload, 30.0);
+        if (empty($decoded['ok'])) {
+            throw new RuntimeException((string)($decoded['error'] ?? 'Motor semantico no disponible.'));
+        }
+        return is_array($decoded['results'] ?? null) ? $decoded['results'] : [];
+    }
+
+    private function ensureSemanticServer(): void
+    {
+        if ($this->semanticHealth()) {
+            return;
+        }
+        if (!$this->canExec()) {
+            throw new RuntimeException('PHP no permite iniciar el motor semantico local.');
+        }
+
+        $python = $this->pythonPath();
+        $script = $this->workerDir . DIRECTORY_SEPARATOR . 'semantic_server.py';
+        if (!is_file($python)) {
+            throw new RuntimeException('Primero instala el entorno RAG local.');
+        }
+        if (!is_file($script)) {
+            throw new RuntimeException('No se encontro semantic_server.py.');
+        }
+
+        $this->ensureRuntimeDir();
+        if (PHP_OS_FAMILY === 'Windows') {
+            if (!is_file($this->semanticLauncher)) {
+                throw new RuntimeException('No se encontro start_semantic_server_hidden.vbs.');
+            }
+            $command = 'wscript.exe //B //Nologo '
+                . escapeshellarg($this->semanticLauncher) . ' '
+                . escapeshellarg($python) . ' '
+                . escapeshellarg($script) . ' '
+                . escapeshellarg($this->workerDir) . ' '
+                . escapeshellarg($this->semanticLogFile) . ' '
+                . escapeshellarg($this->semanticErrorLogFile) . ' '
+                . escapeshellarg((string)$this->semanticPort);
+            $output = [];
+            $code = 0;
+            exec($command, $output, $code);
+            if ($code !== 0) {
+                throw new RuntimeException('Windows no pudo iniciar el motor semantico en segundo plano.');
+            }
+        } else {
+            $command = 'cd ' . escapeshellarg($this->workerDir)
+                . ' && DEVIOZ_SEMANTIC_PORT=' . escapeshellarg((string)$this->semanticPort)
+                . ' nohup ' . escapeshellarg($python)
+                . ' ' . escapeshellarg($script)
+                . ' --port ' . escapeshellarg((string)$this->semanticPort)
+                . ' >> ' . escapeshellarg($this->semanticLogFile)
+                . ' 2>> ' . escapeshellarg($this->semanticErrorLogFile)
+                . ' < /dev/null &';
+            exec($command);
+        }
+
+        // La primera carga del modelo puede tardar varios segundos. Esta espera
+        // solo ocurre al arrancar el motor; las búsquedas siguientes lo reutilizan.
+        for ($i = 0; $i < 80; $i++) {
+            usleep(250000);
+            if ($this->semanticHealth()) {
+                return;
+            }
+        }
+        throw new RuntimeException('El motor semantico no respondio a tiempo.');
+    }
+
+    private function semanticHealth(): bool
+    {
+        try {
+            $data = $this->semanticHttpRequest('GET', '/health', null, 0.7);
+            return !empty($data['ok']) && !empty($data['ready']);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function semanticHttpRequest(string $method, string $path, ?array $payload, float $timeout): array
+    {
+        $errno = 0;
+        $errstr = '';
+        $socket = @stream_socket_client(
+            'tcp://127.0.0.1:' . $this->semanticPort,
+            $errno,
+            $errstr,
+            max(0.2, $timeout),
+            STREAM_CLIENT_CONNECT
+        );
+        if (!is_resource($socket)) {
+            throw new RuntimeException('Motor semantico local no disponible.');
+        }
+        stream_set_timeout($socket, (int)max(1, ceil($timeout)));
+        $body = $payload !== null
+            ? json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            : '';
+        if (!is_string($body)) {
+            fclose($socket);
+            throw new RuntimeException('No se pudo serializar la consulta semantica.');
+        }
+        $request = $method . ' ' . $path . " HTTP/1.1\r\n"
+            . "Host: 127.0.0.1\r\n"
+            . "Accept: application/json\r\n"
+            . "Connection: close\r\n";
+        if ($method === 'POST') {
+            $request .= "Content-Type: application/json; charset=utf-8\r\n"
+                . 'Content-Length: ' . strlen($body) . "\r\n";
+        }
+        $request .= "\r\n" . ($method === 'POST' ? $body : '');
+        fwrite($socket, $request);
+        $raw = stream_get_contents($socket);
+        fclose($socket);
+        if (!is_string($raw) || $raw === '') {
+            throw new RuntimeException('El motor semantico no devolvio respuesta.');
+        }
+        $parts = preg_split("/\r?\n\r?\n/", $raw, 2);
+        $responseBody = (string)($parts[1] ?? '');
+        $decoded = json_decode($responseBody, true);
+        if (!is_array($decoded)) {
+            throw new RuntimeException('Respuesta invalida del motor semantico.');
+        }
+        return $decoded;
     }
 
     public function tailLog(int $lines = 30): string

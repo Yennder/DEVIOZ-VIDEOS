@@ -55,6 +55,9 @@ def fetch_chunks(conn, model_name: str, scope: str, scope_id: int) -> list[dict]
     elif scope == "curso" and scope_id > 0:
         sql += " AND EXISTS (SELECT 1 FROM learning_curso_lecciones l WHERE l.id_video=v.id_video AND l.id_curso=%s) "
         params.append(scope_id)
+    elif scope == "serie" and scope_id > 0:
+        sql += " AND v.id_serie=%s "
+        params.append(scope_id)
     with conn.cursor() as cur:
         cur.execute(sql, params)
         return list(cur.fetchall())
@@ -65,7 +68,7 @@ def main() -> int:
     parser.add_argument("--query", default="")
     parser.add_argument("--query-file", default="")
     parser.add_argument("--top-k", type=int, default=6)
-    parser.add_argument("--scope", choices=["global", "video", "curso"], default="global")
+    parser.add_argument("--scope", choices=["global", "video", "curso", "serie"], default="global")
     parser.add_argument("--scope-id", type=int, default=0)
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()

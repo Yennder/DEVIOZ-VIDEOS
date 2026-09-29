@@ -45,7 +45,7 @@ if ($logueado) {
             <a href="index.php" class="<?php echo $paginaActual === 'index.php' ? 'is-active' : ''; ?>">Inicio</a>
             <a href="series.php" class="<?php echo in_array($paginaActual, ['series.php','detalle_serie.php'], true) ? 'is-active' : ''; ?>">Series</a>
             <?php if($logueado): ?>
-                <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php','logros.php','progreso.php','skills.php','certificados.php'], true) ? 'is-active' : ''; ?>">Aprendizaje</a>
+                <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php','logros.php','progreso.php'], true) ? 'is-active' : ''; ?>">Aprendizaje</a>
                 <a href="favoritos.php" class="<?php echo $paginaActual === 'favoritos.php' ? 'is-active' : ''; ?>">Favoritos</a>
                 <a href="historial.php" class="<?php echo $paginaActual === 'historial.php' ? 'is-active' : ''; ?>">Historial</a>
                 <a href="playlists.php" class="<?php echo $paginaActual === 'playlists.php' ? 'is-active' : ''; ?>">Playlists</a>
@@ -54,11 +54,12 @@ if ($logueado) {
     </div>
 
     <div class="search-box">
-        <form action="index.php" method="GET" role="search">
+        <form action="buscar.php" method="GET" role="search" autocomplete="off">
             <span class="search-icon" aria-hidden="true">⌕</span>
-            <input type="search" name="buscar" value="<?php echo htmlspecialchars($_GET['buscar'] ?? ''); ?>" placeholder="Buscar videos, temas o categorías..." aria-label="Buscar videos">
+            <input type="search" id="smartGlobalSearchInput" name="q" value="<?php echo htmlspecialchars($_GET['q'] ?? $_GET['buscar'] ?? ''); ?>" placeholder="Buscar videos, cursos o dentro del contenido..." aria-label="Buscar en TechFlix" aria-autocomplete="list" aria-controls="smartSearchSuggestions">
             <button type="submit" aria-label="Buscar">Buscar</button>
         </form>
+        <div class="smart-search-suggestions" id="smartSearchSuggestions" role="listbox" hidden></div>
     </div>
 
     <div class="public-navbar-actions">
