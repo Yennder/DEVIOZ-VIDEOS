@@ -31,6 +31,21 @@ $logoPath = $logoSitio
 
 $logoDisponible = $logoPath && is_file($logoPath);
 
+$descargasPendientesSidebar = 0;
+try
+{
+    require_once __DIR__ . "/../../controllers/DescargaController.php";
+    $descargaSidebarController = new DescargaController();
+    if($descargaSidebarController->solicitudesDisponibles())
+    {
+        $descargasPendientesSidebar = $descargaSidebarController->contarSolicitudesPendientes();
+    }
+}
+catch(Throwable $e)
+{
+    $descargasPendientesSidebar = 0;
+}
+
 ?>
 
 <div class="admin-logo">
@@ -76,6 +91,18 @@ class="<?php echo menuActivo('/admin/videos/'); ?>"
 >
 
 🎬 Videos
+
+</a>
+
+
+
+<a
+href="/DEVIOZ-VIDEOS/admin/descargas/listar.php"
+class="<?php echo menuActivo('/admin/descargas/'); ?>"
+>
+
+🔐 Descargas
+<?php if($descargasPendientesSidebar > 0): ?><span class="admin-menu-badge"><?php echo (int)$descargasPendientesSidebar; ?></span><?php endif; ?>
 
 </a>
 

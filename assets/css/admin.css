@@ -3354,3 +3354,54 @@ body.admin-dark-mode .skill-ai-note.is-warning{border-color:#655823;background:#
 .knowledge-diagnostic-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.knowledge-diagnostic-summary article{padding:14px;border:1px solid var(--adm-border);border-radius:13px;background:var(--adm-surface)}.knowledge-diagnostic-summary span{display:block;font-size:8px;text-transform:uppercase;font-weight:800;color:var(--adm-muted)}.knowledge-diagnostic-summary strong{display:block;margin-top:6px;font-size:13px;color:var(--adm-text);overflow-wrap:anywhere}.knowledge-install-card{padding:17px;border:1px solid color-mix(in srgb,var(--adm-accent) 28%,var(--adm-border));border-radius:15px;background:color-mix(in srgb,var(--adm-accent) 5%,var(--adm-surface));}.knowledge-install-card h2{margin:5px 0 7px;font-size:17px}.knowledge-install-card p{margin:7px 0;color:var(--adm-muted);font-size:10px;line-height:1.5}.knowledge-install-card code{display:block;padding:9px 10px;border-radius:9px;background:var(--adm-surface-2);font:9px/1.45 Consolas,monospace;overflow-wrap:anywhere}
 @media(max-width:1180px){.knowledge-engine-card{grid-template-columns:1fr 1fr}.knowledge-engine-buttons{grid-column:1/-1;justify-content:flex-start}.knowledge-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.knowledge-search-form{grid-template-columns:1fr 1fr}.knowledge-search-form>button{grid-column:1/-1}.knowledge-diagnostic-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.knowledge-engine-card,.knowledge-search-form,.knowledge-results,.knowledge-filter{grid-template-columns:1fr}.knowledge-engine-buttons{grid-column:auto}.knowledge-engine-meta{grid-template-columns:1fr}.knowledge-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.knowledge-search-form>button{grid-column:auto}.knowledge-diagnostic-summary{grid-template-columns:1fr}}
+
+/* =========================================
+   TECHFLIX V4.2.1 - DESCARGAS AUTORIZADAS
+========================================= */
+.download-code-created{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:18px 0;padding:18px 20px;border:1px solid #18bfd2;border-radius:14px;background:rgba(24,191,210,.10)}
+.download-code-created span{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:#86dfea}
+.download-code-created strong{font-size:1.25rem;letter-spacing:.12em;color:#fff}
+.download-admin-create{margin-bottom:20px;padding:22px}
+.download-admin-create h2{margin-top:0}
+.download-admin-form{display:grid;grid-template-columns:1fr 1.5fr .7fr .7fr auto;gap:12px;align-items:end}
+.download-admin-form label{display:grid;gap:6px;font-size:.78rem;font-weight:700}
+.download-admin-form select{width:100%;min-width:0}
+.download-admin-note{margin:12px 0 0;color:#8ca7b4;font-size:.8rem}
+.inline-form{display:inline-flex;margin:0}
+.tabla-admin td small{display:block;margin-top:4px;color:#7795a5;font-size:.72rem}
+@media(max-width:1100px){.download-admin-form{grid-template-columns:1fr 1fr}.download-admin-form .btn{width:max-content}}
+@media(max-width:680px){.download-admin-form{grid-template-columns:1fr}}
+.download-admin-create{background:var(--adm-surface,#fff);border:1px solid var(--adm-border,#d9e3e8);border-radius:16px}
+.admin-dark-mode .download-admin-create{background:var(--adm-surface,#10202a)}
+.alerta{margin:14px 0;padding:12px 14px;border-radius:12px;border:1px solid transparent;font-size:.86rem}
+.alerta.exito{background:rgba(23,173,115,.10);border-color:rgba(23,173,115,.35);color:#1dbd7c}
+.alerta.error{background:rgba(219,73,73,.10);border-color:rgba(219,73,73,.35);color:#e06464}
+.download-status{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.download-status.disponible{background:rgba(21,169,108,.14);color:#22bf7d}
+.download-status.revocado{background:rgba(214,61,73,.13);color:#e46a74}
+.download-status.vencido,.download-status.agotado{background:rgba(221,151,38,.14);color:#d9a23e}
+.download-admin-table td{vertical-align:middle}
+.download-admin-table td:nth-child(3){min-width:260px}
+.download-admin-table code{white-space:nowrap}
+.download-history-header{margin-top:28px;margin-bottom:12px}
+.download-history-header h2{margin:0 0 5px}
+
+/* =========================================
+   TECHFLIX V4.2.1 - SOLICITUDES DE DESCARGA
+========================================= */
+.admin-menu-badge{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#ef476f;color:#fff;display:inline-grid;place-items:center;font-size:11px;font-weight:900}
+.download-request-summary{min-width:110px;padding:12px 16px;border:1px solid var(--border,#294352);border-radius:14px;background:var(--surface,#142530);display:grid;place-items:center}
+.download-request-summary strong{font-size:1.5rem;color:#2fd0e6}.download-request-summary span{font-size:.72rem;color:var(--text-soft,#8faab7);text-transform:uppercase;letter-spacing:.08em}
+.download-request-status{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;font-size:.72rem;font-weight:900;text-transform:uppercase}
+.download-request-status.pendiente{background:rgba(245,158,11,.12);color:#fbbf24}.download-request-status.aprobada{background:rgba(16,185,129,.12);color:#34d399}.download-request-status.rechazada{background:rgba(239,68,68,.12);color:#fb7185}
+.download-request-pending-row{background:rgba(245,158,11,.025)}
+.download-request-layout{display:grid;grid-template-columns:minmax(300px,.9fr) minmax(0,1.2fr);gap:20px;align-items:start}
+.download-request-detail dl{display:grid;gap:12px;margin:0 0 20px}.download-request-detail dl div{display:grid;gap:4px}.download-request-detail dt{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--text-soft,#8faab7);font-weight:800}.download-request-detail dd{margin:0;line-height:1.45}
+.download-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.download-review-grid form{border:1px solid var(--border,#294352);border-radius:14px;padding:16px;display:grid;gap:11px}.download-review-grid h3{margin:0 0 2px}.download-review-grid label{display:grid;gap:6px;font-size:.8rem;font-weight:800}.download-review-grid select,.download-review-grid textarea{width:100%;box-sizing:border-box;border:1px solid var(--border,#294352);background:var(--input-bg,#10212c);color:inherit;border-radius:10px;padding:10px 11px;resize:vertical}
+.download-reviewed-box{padding:14px;border-radius:12px;border:1px solid var(--border,#294352);background:var(--surface-2,#172a36);line-height:1.6}
+.download-chat-card{padding:0!important;overflow:hidden}.download-chat-head{padding:18px 20px;border-bottom:1px solid var(--border,#294352)}.download-chat-head h2{margin:5px 0 0}.download-chat-thread{display:grid;gap:10px;padding:18px;max-height:520px;overflow:auto}.download-chat-message{max-width:88%;padding:11px 13px;border:1px solid var(--border,#294352);border-radius:13px;background:var(--surface-2,#172a36)}.download-chat-message.usuario{justify-self:start;background:rgba(40,200,227,.07)}.download-chat-message.admin{justify-self:end;background:rgba(16,185,129,.07)}.download-chat-message.sistema{justify-self:center;max-width:100%;background:rgba(148,163,184,.07)}.download-chat-message p{margin:0;line-height:1.5;overflow-wrap:anywhere}.download-chat-meta{display:flex;justify-content:space-between;gap:14px;font-size:.72rem;color:var(--text-soft,#8faab7);margin-bottom:5px}
+.download-chat-form{display:grid;gap:10px;padding:16px 18px;border-top:1px solid var(--border,#294352)}.download-chat-form textarea{width:100%;box-sizing:border-box;border:1px solid var(--border,#294352);background:var(--input-bg,#10212c);color:inherit;border-radius:10px;padding:11px 12px;resize:vertical}
+@media(max-width:980px){.download-request-layout{grid-template-columns:1fr}.download-review-grid{grid-template-columns:1fr}}
+
+/* V4.2.1 - solicitudes sin chat */
+.download-request-layout-single{grid-template-columns:minmax(0,900px)}.admin-copy-code{margin-left:8px;border:1px solid rgba(28,201,218,.35);background:rgba(28,201,218,.10);color:#1cc9da;border-radius:8px;padding:5px 8px;font-weight:800;cursor:pointer}.download-request-status.vencida,.download-request-status.revocada,.download-request-status.descargada{background:rgba(125,143,160,.14);color:#9aaebe}.download-request-status.rechazada{background:rgba(238,82,83,.14);color:#ff7878}

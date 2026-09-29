@@ -20,6 +20,7 @@ $categorias = $categorias ?? [];
         <a href="logros.php" class="<?php echo $paginaActual === 'logros.php' ? 'menu-publico-activo' : ''; ?>"><span>🏅</span>Mis logros</a>
         <a href="certificados.php" class="<?php echo $paginaActual === 'certificados.php' ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mis certificados</a>
         <a href="notificaciones.php" class="<?php echo $paginaActual === 'notificaciones.php' ? 'menu-publico-activo' : ''; ?>"><span>🔔</span>Notificaciones</a>
+        <a href="solicitudes_descarga.php" class="<?php echo in_array($paginaActual, ['solicitudes_descarga.php','solicitud_descarga.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🔐</span>Mis solicitudes</a>
     </div>
     <div class="sidebar-section">
         <span class="sidebar-eyebrow">Mi biblioteca</span>

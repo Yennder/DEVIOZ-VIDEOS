@@ -7302,3 +7302,77 @@ video::cue{background:rgba(0,0,0,.78);color:#fff;font-family:"Manrope","Segoe UI
     .devioz-ai-context-switcher>div{grid-template-columns:1fr 1fr}
 }
 
+
+/* =========================================
+   TECHFLIX V4.2.1 - DESCARGA CON CODIGO
+========================================= */
+
+.download-access-drawer{
+    position:fixed;
+    top:92px;
+    right:18px;
+    width:min(430px,calc(100vw - 36px));
+    max-height:calc(100vh - 112px);
+    overflow:auto;
+    background:var(--card-bg,#13232e);
+    color:var(--text-color,#f1f7fa);
+    border:1px solid var(--border-color,#294352);
+    border-radius:20px;
+    box-shadow:0 24px 80px rgba(0,0,0,.42);
+    z-index:88;
+    transform:translateX(calc(100% + 40px));
+    opacity:0;
+    pointer-events:none;
+    transition:transform .22s ease,opacity .22s ease;
+}
+.download-access-drawer.is-open{transform:translateX(0);opacity:1;pointer-events:auto}
+.download-access-drawer-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 22px 14px;border-bottom:1px solid var(--border-color,#294352)}
+.download-access-drawer-head h2{margin:4px 0 0;font-size:1.35rem}
+.download-access-close{border:0;background:transparent;color:inherit;font-size:1.8rem;cursor:pointer;line-height:1;padding:2px 6px}
+.download-access-drawer-body{padding:22px;display:grid;gap:16px}
+.download-access-drawer-body>p,.download-access-drawer-body>small{color:var(--muted-color,#9eb4bf);line-height:1.5}
+.download-access-drawer-body label{display:block;margin:0 0 8px;font-weight:800}
+.download-access-drawer-body input,.download-access-drawer-body textarea{width:100%;box-sizing:border-box;border:1px solid var(--border-color,#294352);background:var(--input-bg,#0b1821);color:inherit;border-radius:12px;padding:13px 14px;resize:vertical}
+.download-access-drawer-body input{text-transform:uppercase;font-weight:850;letter-spacing:.07em;margin-bottom:12px}
+.download-request-state{display:grid;gap:4px;padding:14px 15px;border-radius:14px;border:1px solid var(--border-color,#294352)}
+.download-request-state strong{font-size:.95rem}
+.download-request-state span{font-size:.82rem;color:var(--muted-color,#9eb4bf)}
+.download-request-state.pending{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3)}
+.download-request-state.approved{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
+.download-request-state.rejected{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3)}
+.download-request-create-form{display:grid;gap:10px}
+.download-conversation-link{color:var(--accent,#28c8e3);font-weight:800;font-size:.88rem}
+.download-request-public-page{padding-bottom:70px}
+.download-request-public-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:28px;border:1px solid var(--border-color,#294352);border-radius:22px;background:var(--card-bg,#13232e);margin-bottom:20px}
+.download-request-public-hero h1{margin:5px 0 7px;font-size:clamp(1.8rem,4vw,2.7rem)}
+.download-request-public-hero p{color:var(--muted-color,#9eb4bf)}
+.download-public-status{padding:8px 12px;border-radius:999px;font-size:.78rem;font-weight:900;text-transform:uppercase}
+.download-public-status.pendiente{background:rgba(245,158,11,.12);color:#fbbf24}
+.download-public-status.aprobada{background:rgba(16,185,129,.12);color:#34d399}
+.download-public-status.rechazada{background:rgba(239,68,68,.12);color:#fb7185}
+.download-request-public-grid{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.4fr);gap:20px}
+.download-request-public-card{background:var(--card-bg,#13232e);border:1px solid var(--border-color,#294352);border-radius:18px;padding:22px}
+.download-request-public-card h2{margin:0 0 15px}
+.download-request-public-card p{line-height:1.55;margin:10px 0}
+.download-request-public-card .muted{color:var(--muted-color,#9eb4bf)}
+.download-approved-copy{color:#65d6ae}.download-rejected-copy{color:#ff8da0}
+.download-chat-card-public{padding:0;overflow:hidden}
+.download-chat-card-public .download-chat-head{padding:20px 22px;border-bottom:1px solid var(--border-color,#294352)}
+.download-chat-card-public .download-chat-head h2{margin:5px 0 0}
+.download-chat-thread-public{display:grid;gap:12px;padding:20px;max-height:440px;overflow:auto}
+.download-chat-message-public{max-width:88%;padding:12px 14px;border-radius:14px;background:var(--surface-2,#172a36);border:1px solid var(--border-color,#294352)}
+.download-chat-message-public.usuario{justify-self:end;background:rgba(40,200,227,.08)}
+.download-chat-message-public.admin{justify-self:start;background:rgba(16,185,129,.08)}
+.download-chat-message-public.sistema{justify-self:center;max-width:100%;background:rgba(148,163,184,.08)}
+.download-chat-meta{display:flex;justify-content:space-between;gap:14px;font-size:.76rem;color:var(--muted-color,#9eb4bf);margin-bottom:6px}
+.download-chat-message-public p{margin:0!important;white-space:normal;overflow-wrap:anywhere}
+.download-chat-form-public{display:grid;gap:10px;padding:18px 20px;border-top:1px solid var(--border-color,#294352)}
+.download-chat-form-public textarea{width:100%;box-sizing:border-box;border:1px solid var(--border-color,#294352);background:var(--input-bg,#0b1821);color:inherit;border-radius:12px;padding:12px 14px;resize:vertical}
+.download-inline-notice{position:static!important;opacity:1!important;transform:none!important;margin:0 0 18px!important}
+.download-inline-error{padding:13px 15px;border-radius:12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ff9cab;margin-bottom:18px}
+@media (max-width:900px){.download-request-public-grid{grid-template-columns:1fr}.download-access-drawer{right:10px;width:min(420px,calc(100vw - 20px))}}
+@media (max-width:600px){.download-access-drawer{top:82px;right:8px;width:calc(100vw - 16px);max-height:calc(100vh - 92px)}.download-request-public-hero{padding:20px;flex-direction:column}.download-chat-message-public{max-width:96%}}
+
+/* V4.2.1 - solicitudes de descarga simplificadas */
+.download-user-request-list{display:grid;gap:14px}.download-user-request-card{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px;border:1px solid var(--border-color);border-radius:16px;background:var(--surface-1)}.download-user-request-main{display:flex;gap:14px;min-width:0;flex:1}.download-user-request-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--surface-2);flex:0 0 auto}.download-user-request-main h2{margin:0;font-size:1rem}.download-user-request-main p,.download-user-request-main small{display:block;margin:5px 0 0;color:var(--text-muted)}.download-user-request-topline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.download-user-request-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.download-user-status{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:.72rem;font-weight:800;text-transform:uppercase}.download-user-status.pendiente{background:rgba(245,183,59,.14);color:#f5b73b}.download-user-status.aprobada{background:rgba(29,185,121,.14);color:#30d592}.download-user-status.rechazada,.download-user-status.revocada{background:rgba(238,82,83,.14);color:#ff7878}.download-user-status.vencida,.download-user-status.descargada{background:rgba(125,143,160,.14);color:var(--text-muted)}.download-visible-code{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.download-visible-code code{padding:8px 10px;border-radius:9px;background:var(--surface-2);font-weight:800;letter-spacing:.04em}.download-visible-code.compact{margin:10px 0}.btn-copy-download-code,.notification-copy-code{border:1px solid rgba(28,201,218,.35);background:rgba(28,201,218,.10);color:var(--accent);border-radius:9px;padding:8px 10px;font:inherit;font-size:.76rem;font-weight:800;cursor:pointer}.notification-copy-code{margin:4px 8px 8px auto;display:block}.download-request-detail-link{color:var(--accent);font-weight:800;font-size:.82rem}.download-request-reason{margin-top:8px;color:#ff8b8b}.download-request-summary-card{display:flex;justify-content:space-between;gap:24px;padding:22px;border:1px solid var(--border-color);border-radius:18px;background:var(--surface-1)}.download-approved-panel{min-width:min(380px,100%);padding:16px;border-radius:14px;background:rgba(29,185,121,.07);border:1px solid rgba(29,185,121,.24)}.download-approved-panel>span{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}.download-approved-panel form{margin-top:12px}.download-request-page-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.notification-dropdown-item{position:relative}.notification-card-actions .notification-copy-code{margin:0}.download-requests-page .content-section{padding-top:18px}
+@media(max-width:800px){.download-user-request-card,.download-request-summary-card{align-items:stretch;flex-direction:column}.download-user-request-actions{justify-content:flex-start}.download-approved-panel{min-width:0;width:100%}}

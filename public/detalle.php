@@ -5,6 +5,8 @@ require_once "../controllers/TemporadaController.php";
 require_once "../controllers/VideoController.php";
 require_once "../controllers/InteraccionController.php";
 require_once "../controllers/TranscripcionController.php";
+require_once "../includes/video_security.php";
+require_once "../controllers/DescargaController.php";
 
 $videoController = new VideoController();
 $temporadaController = new TemporadaController();
@@ -42,6 +44,28 @@ if(!$video)
     header("Location:index.php");
     exit;
 
+}
+
+// V4.2.1 - URL temporal de reproduccion. Los MP4 ya no se exponen directamente.
+$videoStreamExpira = time() + 7200;
+$videoStreamToken = deviozVideoStreamToken((int)$id, $videoStreamExpira);
+
+// V4.2.1 - Solicitud de descarga no bloqueante.
+$descargaSolicitudActual = null;
+if (usuarioAutenticado())
+{
+    try
+    {
+        $descargaController = new DescargaController();
+        if ($descargaController->solicitudesDisponibles())
+        {
+            $descargaSolicitudActual = $descargaController->solicitudActualUsuario((int)$_SESSION["id_usuario"], (int)$id);
+        }
+    }
+    catch (Throwable $e)
+    {
+        error_log("TECHFLIX V4.2.1 - No se pudo consultar solicitud de descarga: " . $e->getMessage());
+    }
 }
 
 
@@ -515,13 +539,13 @@ id="deviozPlayerBox"
     <video
     id="deviozVideoPlayer"
     controls
-    controlsList="nofullscreen"
+    controlsList="nodownload nofullscreen noremoteplayback"
     preload="metadata"
     >
 
 
         <source
-        src="../uploads/videos/<?php echo htmlspecialchars($video["archivo_video"]); ?>"
+        src="video_stream.php?id=<?php echo (int)$id; ?>&amp;exp=<?php echo (int)$videoStreamExpira; ?>&amp;token=<?php echo htmlspecialchars($videoStreamToken); ?>"
         type="video/mp4"
         >
 
@@ -802,6 +826,12 @@ href="detalle.php?id=<?php echo (int)$siguiente["id_video"]; ?>"
     <button type="button" class="video-action-btn" id="btnShareVideo"><span>↗</span><strong>Compartir</strong></button>
 
     <?php if(usuarioAutenticado()): ?>
+        <button type="button" class="video-action-btn" id="btnOpenDownloadCode"><span>⇩</span><strong>Descargar</strong><small><?php echo $descargaSolicitudActual && $descargaSolicitudActual['estado']==='aprobada' && ($descargaSolicitudActual['estado_codigo'] ?? '')==='disponible' ? 'Autorizada' : ($descargaSolicitudActual && $descargaSolicitudActual['estado']==='pendiente' ? 'Solicitud pendiente' : 'Solicitar acceso'); ?></small></button>
+    <?php else: ?>
+        <a class="video-action-btn" href="../views/login.php?redirect=<?php echo urlencode('/DEVIOZ-VIDEOS/public/detalle.php?id=' . $id); ?>"><span>⇩</span><strong>Descargar</strong><small>Inicia sesion</small></a>
+    <?php endif; ?>
+
+    <?php if(usuarioAutenticado()): ?>
         <div class="playlist-add-control">
             <select id="playlistSelect" aria-label="Seleccionar playlist">
                 <option value="">Añadir a playlist…</option>
@@ -823,6 +853,53 @@ href="detalle.php?id=<?php echo (int)$siguiente["id_video"]; ?>"
         </div>
     <?php endif; ?>
 </div>
+
+<?php if(usuarioAutenticado()): ?>
+<aside class="download-access-drawer" id="downloadAccessDrawer" aria-labelledby="downloadAccessTitle" aria-hidden="true">
+    <div class="download-access-drawer-head">
+        <div><span class="section-kicker">DESCARGA PROTEGIDA</span><h2 id="downloadAccessTitle">Solicitar descarga</h2></div>
+        <button type="button" class="download-access-close" id="btnCloseDownloadCode" aria-label="Cerrar">×</button>
+    </div>
+    <div class="download-access-drawer-body">
+        <p>La solicitud no bloquea el reproductor. Puedes seguir navegando y revisar el estado desde <strong>Mis solicitudes</strong>.</p>
+
+        <?php if($descargaSolicitudActual && ($descargaSolicitudActual['estado_mostrado'] ?? '')==='pendiente'): ?>
+            <div class="download-request-state pending"><strong>Solicitud pendiente</strong><span>El administrador aun debe revisarla.</span></div>
+            <a class="btn-secondary-modern" href="solicitudes_descarga.php">Ver mis solicitudes</a>
+        <?php elseif($descargaSolicitudActual && ($descargaSolicitudActual['estado_mostrado'] ?? '')==='aprobada' && !empty($descargaSolicitudActual['codigo_visible'])): ?>
+            <div class="download-request-state approved"><strong>Descarga aprobada</strong><span>Tu codigo ya esta disponible y tambien fue enviado a tus notificaciones.</span></div>
+            <div class="download-visible-code compact">
+                <code><?php echo htmlspecialchars($descargaSolicitudActual['codigo_visible']); ?></code>
+                <button type="button" class="btn-copy-download-code" data-copy-code="<?php echo htmlspecialchars($descargaSolicitudActual['codigo_visible'], ENT_QUOTES); ?>">Copiar codigo</button>
+            </div>
+            <form method="post" action="descargar_video.php" target="_blank" id="downloadCodeForm">
+                <?php echo csrfInput(); ?>
+                <input type="hidden" name="id_video" value="<?php echo (int)$id; ?>">
+                <input type="hidden" name="codigo_descarga" value="<?php echo htmlspecialchars($descargaSolicitudActual['codigo_visible'], ENT_QUOTES); ?>">
+                <button type="submit" class="btn-primary-modern">Descargar ahora</button>
+            </form>
+            <a class="download-conversation-link" href="solicitudes_descarga.php">Ver mis solicitudes</a>
+        <?php else: ?>
+            <?php if($descargaSolicitudActual && ($descargaSolicitudActual['estado_mostrado'] ?? '')==='rechazada'): ?>
+                <div class="download-request-state rejected"><strong>Solicitud anterior rechazada</strong><span><?php echo !empty($descargaSolicitudActual['motivo_rechazo']) ? htmlspecialchars($descargaSolicitudActual['motivo_rechazo']) : 'Puedes enviar una nueva solicitud.'; ?></span></div>
+                <a class="download-conversation-link" href="solicitudes_descarga.php">Ver mis solicitudes</a>
+            <?php elseif($descargaSolicitudActual && in_array(($descargaSolicitudActual['estado_mostrado'] ?? ''), ['vencida','revocada','descargada'], true)): ?>
+                <div class="download-request-state rejected"><strong>Autorizacion no disponible</strong><span>El codigo anterior vencio, fue revocado o ya fue utilizado. Puedes solicitar uno nuevo.</span></div>
+                <a class="download-conversation-link" href="solicitudes_descarga.php">Ver mis solicitudes</a>
+            <?php endif; ?>
+            <form method="post" action="solicitud_descarga.php" class="download-request-create-form">
+                <?php echo csrfInput(); ?>
+                <input type="hidden" name="accion" value="crear">
+                <input type="hidden" name="id_video" value="<?php echo (int)$id; ?>">
+                <label for="downloadRequestReason">Motivo opcional</label>
+                <textarea id="downloadRequestReason" name="motivo" rows="3" maxlength="500" placeholder="Ej. Necesito revisarlo sin conexion."></textarea>
+                <button type="submit" class="btn-primary-modern">Solicitar codigo</button>
+            </form>
+            <small>Cuando el administrador apruebe, recibiras una notificacion con el codigo.</small>
+        <?php endif; ?>
+    </div>
+</aside>
+<?php endif; ?>
 
 <div class="interaction-toast" id="interactionToast" role="status" aria-live="polite"></div>
 

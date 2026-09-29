@@ -4565,3 +4565,222 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+
+// =========================================
+// TECHFLIX V4.2.1 - DESCARGA AUTORIZADA
+// =========================================
+document.addEventListener("DOMContentLoaded", function () {
+    const video = document.getElementById("deviozVideoPlayer");
+    if (video) {
+        video.addEventListener("contextmenu", function (event) {
+            event.preventDefault();
+        });
+    }
+
+    const drawer = document.getElementById("downloadAccessDrawer");
+    const openButton = document.getElementById("btnOpenDownloadCode");
+    const closeButton = document.getElementById("btnCloseDownloadCode");
+    const codeInput = document.getElementById("downloadCodeInput");
+
+    if (!drawer || !openButton) return;
+
+    function openDrawer() {
+        drawer.classList.add("is-open");
+        drawer.setAttribute("aria-hidden", "false");
+        window.setTimeout(function () {
+            const target = codeInput || drawer.querySelector("textarea, input, button");
+            if (target && typeof target.focus === "function") target.focus();
+        }, 80);
+    }
+
+    function closeDrawer() {
+        drawer.classList.remove("is-open");
+        drawer.setAttribute("aria-hidden", "true");
+        openButton.focus();
+    }
+
+    openButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        if (drawer.classList.contains("is-open")) closeDrawer();
+        else openDrawer();
+    });
+
+    if (closeButton) closeButton.addEventListener("click", closeDrawer);
+
+    if (codeInput) {
+        codeInput.addEventListener("input", function () {
+            const pos = codeInput.selectionStart;
+            codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+            try { codeInput.setSelectionRange(pos, pos); } catch (error) {}
+        });
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && drawer.classList.contains("is-open")) closeDrawer();
+    });
+});
+
+// =========================================
+// TECHFLIX V4.2.1 - CODIGOS EN NOTIFICACIONES
+// Y ACTUALIZACION LIGERA DE LA CAMPANA
+// =========================================
+document.addEventListener("DOMContentLoaded", function () {
+    const codePattern = /DEV-[A-Z0-9]{4}-[A-Z0-9]{4}/i;
+
+    function copyCode(code, button) {
+        if (!code) return;
+        const done = function () {
+            if (!button) return;
+            const original = button.textContent;
+            button.textContent = "Copiado";
+            window.setTimeout(function () { button.textContent = original; }, 1400);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(code).then(done).catch(function () {});
+            return;
+        }
+        const input = document.createElement("textarea");
+        input.value = code;
+        input.setAttribute("readonly", "readonly");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        try { document.execCommand("copy"); done(); } catch (error) {}
+        input.remove();
+    }
+
+    document.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-copy-code]");
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        copyCode(button.getAttribute("data-copy-code") || "", button);
+    });
+
+    function enhanceVisibleNotifications() {
+        document.querySelectorAll(".notification-dropdown-item, .notification-card").forEach(function (item) {
+            if (item.querySelector(".notification-copy-code")) return;
+            const match = (item.textContent || "").match(codePattern);
+            if (!match) return;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "notification-copy-code";
+            btn.setAttribute("data-copy-code", match[0].toUpperCase());
+            btn.textContent = "Copiar codigo";
+            if (item.classList.contains("notification-card")) {
+                const actions = item.querySelector(".notification-card-actions") || item;
+                actions.prepend(btn);
+            } else {
+                item.appendChild(btn);
+            }
+        });
+    }
+
+    enhanceVisibleNotifications();
+
+    const center = document.getElementById("notificationCenter");
+    const bell = document.getElementById("notificationBell");
+    const dropdown = document.getElementById("notificationDropdown");
+    if (!center || !bell || !dropdown) return;
+
+    let lastCount = Number((bell.querySelector("b") || {}).textContent || 0);
+
+    function setBellCount(count) {
+        let badge = bell.querySelector("b");
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement("b");
+                bell.appendChild(badge);
+            }
+            badge.textContent = count > 99 ? "99+" : String(count);
+        } else if (badge) {
+            badge.remove();
+        }
+        const small = dropdown.querySelector(".notification-dropdown-head small");
+        if (small) small.textContent = String(count) + " sin leer";
+    }
+
+    function buildNotificationItem(notif, csrf) {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/DEVIOZ-VIDEOS/public/notificaciones.php";
+        form.className = "notification-dropdown-item";
+        [
+            ["csrf_token", csrf],
+            ["accion", "leer"],
+            ["id_notificacion", String(notif.id)],
+            ["destino", notif.url || "/DEVIOZ-VIDEOS/public/notificaciones.php"]
+        ].forEach(function (pair) {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = pair[0];
+            input.value = pair[1];
+            form.appendChild(input);
+        });
+
+        const open = document.createElement("button");
+        open.type = "submit";
+        const icon = document.createElement("span");
+        icon.className = "notification-dropdown-icon";
+        icon.textContent = notif.icono || "🔔";
+        const body = document.createElement("span");
+        const strong = document.createElement("strong");
+        strong.textContent = notif.titulo || "Notificacion";
+        const small = document.createElement("small");
+        small.textContent = notif.mensaje || "";
+        const em = document.createElement("em");
+        em.textContent = notif.fecha || "";
+        body.append(strong, small, em);
+        open.append(icon, body);
+        form.appendChild(open);
+
+        const match = String(notif.mensaje || "").match(codePattern);
+        if (match) {
+            const copy = document.createElement("button");
+            copy.type = "button";
+            copy.className = "notification-copy-code";
+            copy.setAttribute("data-copy-code", match[0].toUpperCase());
+            copy.textContent = "Copiar codigo";
+            form.appendChild(copy);
+        }
+        return form;
+    }
+
+    async function refreshNotifications() {
+        if (document.hidden) return;
+        try {
+            const response = await fetch("/DEVIOZ-VIDEOS/api/notificaciones_estado.php", {
+                credentials: "same-origin",
+                cache: "no-store",
+                headers: {"Accept": "application/json"}
+            });
+            if (!response.ok) return;
+            const data = await response.json();
+            if (!data || !data.ok) return;
+            const count = Number(data.count || 0);
+            setBellCount(count);
+
+            const list = dropdown.querySelector(".notification-dropdown-list");
+            if (list && Array.isArray(data.items)) {
+                list.innerHTML = "";
+                if (!data.items.length) {
+                    const empty = document.createElement("div");
+                    empty.className = "notification-dropdown-empty";
+                    empty.innerHTML = "<span>✓</span><p>Estas al dia.</p>";
+                    list.appendChild(empty);
+                } else {
+                    data.items.forEach(function (notif) {
+                        list.appendChild(buildNotificationItem(notif, data.csrf || ""));
+                    });
+                }
+            }
+            lastCount = count;
+        } catch (error) {}
+    }
+
+    window.setInterval(refreshNotifications, 10000);
+    document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) refreshNotifications();
+    });
+});
