@@ -929,6 +929,25 @@ Descripción
 
 </div>
 
+<?php if(usuarioAutenticado()): ?>
+<section class="ai-summary-card" data-ai-summary data-summary-type="video" data-summary-id="<?php echo (int)$id; ?>" data-summary-csrf="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>" data-summary-can-refresh="<?php echo esAdmin() ? '1' : '0'; ?>">
+    <div class="ai-summary-heading">
+        <div>
+            <span class="section-kicker">DEVIOZ AI · V4.4.1</span>
+            <h2>Resumen inteligente</h2>
+            <p>Generado a partir de la transcripción del video y guardado para reutilizarlo.</p>
+        </div>
+        <div class="ai-summary-actions">
+            <span class="ai-summary-badge" data-summary-status>Comprobando…</span>
+            <button type="button" class="btn-secondary-modern" data-summary-generate hidden>✨ Generar resumen</button>
+        </div>
+    </div>
+    <div class="ai-summary-body" data-summary-body>
+        <div class="ai-summary-loading"><span></span><p>Revisando si ya existe un resumen…</p></div>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php if($transcripcionVideo && ($transcripcionVideo["estado"] ?? "") === "completada" && !empty($transcripcionSegmentos)): ?>
 <section class="video-transcript-card" id="transcripcionVideo">
     <div class="video-transcript-heading">

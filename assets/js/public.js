@@ -5089,3 +5089,202 @@ document.addEventListener("DOMContentLoaded", function () {
         false
     );
 });
+
+/* =========================================================
+   TECHFLIX V4.4.1 - RESUMENES AUTOMATICOS CON IA
+   ========================================================= */
+(function () {
+    'use strict';
+
+    const cards = Array.from(document.querySelectorAll('[data-ai-summary]'));
+    if (!cards.length) return;
+
+    const apiUrl = '/DEVIOZ-VIDEOS/api/resumen_ia.php';
+
+    const escapeHtml = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const formatDate = (value) => {
+        if (!value) return '';
+        const normalized = String(value).replace(' ', 'T');
+        const date = new Date(normalized);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return new Intl.DateTimeFormat('es-PE', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+        }).format(date);
+    };
+
+    const renderTags = (items) => {
+        const values = Array.isArray(items) ? items.filter(Boolean) : [];
+        if (!values.length) return '<span class="ai-summary-tag">No se identificaron elementos explícitos</span>';
+        return values.map((item) => `<span class="ai-summary-tag">${escapeHtml(item)}</span>`).join('');
+    };
+
+    const renderList = (items) => {
+        const values = Array.isArray(items) ? items.filter(Boolean) : [];
+        if (!values.length) return '<li>No se identificaron elementos adicionales.</li>';
+        return values.map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+    };
+
+    function setButton(card, mode, visible) {
+        const button = card.querySelector('[data-summary-generate]');
+        if (!button) return;
+        button.hidden = !visible;
+        button.disabled = false;
+        button.dataset.summaryMode = mode || 'generate';
+        button.textContent = mode === 'regenerate'
+            ? '↻ Regenerar resumen'
+            : mode === 'update'
+                ? '↻ Actualizar resumen'
+                : '✨ Generar resumen';
+    }
+
+    function setStatus(card, text, className = '') {
+        const status = card.querySelector('[data-summary-status]');
+        if (!status) return;
+        status.textContent = text;
+        status.className = `ai-summary-badge${className ? ' ' + className : ''}`;
+    }
+
+    function renderSummary(card, payload) {
+        const body = card.querySelector('[data-summary-body]');
+        if (!body) return;
+
+        const summary = payload.resumen;
+        const coverage = payload.cobertura || null;
+        const stale = Boolean(payload.desactualizado);
+        const canRefresh = card.dataset.summaryCanRefresh === '1';
+
+        if (!summary) {
+            const message = payload.disponible
+                ? 'Todavía no existe un resumen guardado. Puedes generarlo a partir de las transcripciones disponibles.'
+                : (payload.motivo || 'No hay contenido transcrito suficiente para generar un resumen.');
+            body.innerHTML = `<div class="ai-summary-empty"><p>${escapeHtml(message)}</p></div>`;
+            setStatus(card, payload.disponible ? 'Disponible para generar' : 'Sin fuente', payload.disponible ? '' : 'is-error');
+            setButton(card, 'generate', Boolean(payload.disponible));
+            return;
+        }
+
+        const coverageText = coverage && Number(coverage.total) > 1
+            ? `${Number(coverage.transcritas || 0)} de ${Number(coverage.total || 0)} lecciones transcritas`
+            : 'Fuente transcrita disponible';
+        const provider = [summary.proveedor, summary.modelo].filter(Boolean).join(' · ');
+        const meta = [coverageText, provider, summary.fecha_generacion ? `Generado ${formatDate(summary.fecha_generacion)}` : '']
+            .filter(Boolean)
+            .map((item) => `<span>${escapeHtml(item)}</span>`)
+            .join('');
+
+        const note = stale
+            ? '<div class="ai-summary-note">La transcripción cambió después de generar este resumen. Puedes actualizarlo para reflejar el contenido más reciente.</div>'
+            : (payload.motivo ? `<div class="ai-summary-note">${escapeHtml(payload.motivo)}</div>` : '');
+
+        body.innerHTML = `
+            <div class="ai-summary-content">
+                ${note}
+                <p class="ai-summary-text">${escapeHtml(summary.resumen)}</p>
+                <div class="ai-summary-grid">
+                    <div class="ai-summary-panel">
+                        <h3>💡 Puntos clave</h3>
+                        <ul>${renderList(summary.puntos_clave)}</ul>
+                    </div>
+                    <div class="ai-summary-panel">
+                        <h3>🧠 Conceptos</h3>
+                        <div class="ai-summary-tags">${renderTags(summary.conceptos)}</div>
+                    </div>
+                    <div class="ai-summary-panel">
+                        <h3>🛠 Tecnologías</h3>
+                        <div class="ai-summary-tags">${renderTags(summary.tecnologias)}</div>
+                    </div>
+                </div>
+                <div class="ai-summary-meta">${meta}</div>
+            </div>`;
+
+        setStatus(card, stale ? 'Actualización disponible' : 'Resumen listo', stale ? 'is-stale' : 'is-ready');
+        if (stale) {
+            setButton(card, 'update', true);
+        } else {
+            setButton(card, 'regenerate', canRefresh);
+        }
+    }
+
+    async function loadSummary(card) {
+        const type = card.dataset.summaryType || '';
+        const id = Number(card.dataset.summaryId || 0);
+        if (!type || !id) return;
+
+        try {
+            const response = await fetch(`${apiUrl}?tipo=${encodeURIComponent(type)}&id=${id}`, {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo consultar el resumen.');
+            renderSummary(card, data);
+        } catch (error) {
+            const body = card.querySelector('[data-summary-body]');
+            if (body) body.innerHTML = `<div class="ai-summary-error">${escapeHtml(error.message || 'No se pudo cargar el resumen.')}</div>`;
+            setStatus(card, 'Error', 'is-error');
+            setButton(card, '', false);
+        }
+    }
+
+    async function generateSummary(card) {
+        const button = card.querySelector('[data-summary-generate]');
+        const body = card.querySelector('[data-summary-body]');
+        const type = card.dataset.summaryType || '';
+        const id = Number(card.dataset.summaryId || 0);
+        const csrf = card.dataset.summaryCsrf || '';
+        const mode = button?.dataset.summaryMode || 'generate';
+
+        if (!button || !body || !type || !id) return;
+        button.disabled = true;
+        button.textContent = 'Generando…';
+        setStatus(card, 'DEVIOZ AI analizando…');
+        body.innerHTML = '<div class="ai-summary-loading"><span></span><p>Analizando transcripciones. La primera generación puede tardar algunos segundos…</p></div>';
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    tipo: type,
+                    id,
+                    csrf_token: csrf,
+                    forzar: mode === 'regenerate'
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || !data.ok) throw new Error(data.mensaje || 'No se pudo generar el resumen.');
+
+            renderSummary(card, {
+                ok: true,
+                disponible: true,
+                resumen: data.resumen,
+                cobertura: data.cobertura,
+                desactualizado: false,
+                motivo: ''
+            });
+        } catch (error) {
+            body.innerHTML = `<div class="ai-summary-error">${escapeHtml(error.message || 'No se pudo generar el resumen.')}</div>`;
+            setStatus(card, 'Error al generar', 'is-error');
+            button.disabled = false;
+            button.hidden = false;
+            button.textContent = mode === 'regenerate' ? '↻ Regenerar resumen' : mode === 'update' ? '↻ Actualizar resumen' : '✨ Generar resumen';
+        }
+    }
+
+    cards.forEach((card) => {
+        const button = card.querySelector('[data-summary-generate]');
+        button?.addEventListener('click', () => generateSummary(card));
+        loadSummary(card);
+    });
+})();
