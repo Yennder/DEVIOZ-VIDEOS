@@ -1,0 +1,9 @@
+Options -Indexes
+
+# Esta carpeta es solo para MP4 publicos de portada (NO videos privados).
+# Nunca permitir interpretar scripts subidos aqui.
+<FilesMatch "\.(php|phtml|phar|php[0-9]*|cgi|pl|py|sh|html?|shtml)$">
+    Require all denied
+</FilesMatch>
+
+AddType video/mp4 .mp4

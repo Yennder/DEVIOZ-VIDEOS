@@ -28,14 +28,12 @@ if(usuarioAutenticado()) {
 $modoBusqueda = $buscar !== '' || $categoria !== '';
 $hero = $populares[0] ?? ($videos[0] ?? null);
 
-// Portada V4.5.1: al colocar el MP4 local, se usa sin cambiar este archivo.
-// Clip alternativo: Mixkit "Open office space and staircase" (ID 917).
-// Fuente: https://mixkit.co/free-stock-video/open-office-space-and-staircase-917/
-// Licencia: https://mixkit.co/license/modal/videoFree/
-$portadaVideoLocal = __DIR__ . '/../assets/media/portada-tech.mp4';
-$portadaVideoSrc = is_file($portadaVideoLocal)
-    ? '../assets/media/portada-tech.mp4'
-    : 'https://assets.mixkit.co/videos/preview/mixkit-open-office-space-and-staircase-917-large.mp4';
+// HOTFIX V4.5.1.1: el administrador gestiona el MP4 desde Configuracion.
+// Los videos protegidos del catalogo NO se utilizan como fondo publico.
+require_once '../controllers/ConfiguracionController.php';
+require_once '../includes/portada_video.php';
+$configuracionPortada = new ConfiguracionController();
+$portadaVideoSrc = deviozFuenteVideoPortada($configuracionPortada->obtener('video_portada'), '../');
 ?>
 
 <?php include '../includes/public_header.php'; ?>
@@ -48,9 +46,11 @@ $portadaVideoSrc = is_file($portadaVideoLocal)
     <?php if(!$modoBusqueda): ?>
     <section class="platform-hero platform-hero--video" aria-label="Destacado de DEVIOZ VIDEOS">
         <div class="platform-hero-media" aria-hidden="true">
+            <?php if ($portadaVideoSrc !== null): ?>
             <video class="platform-hero-video" autoplay muted playsinline loop preload="metadata" tabindex="-1" disablepictureinpicture disableremoteplayback>
                 <source src="<?php echo htmlspecialchars($portadaVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
             </video>
+            <?php endif; ?>
         </div>
         <div class="platform-hero-copy">
             <span class="hero-kicker">Aprende · Explora · Descubre</span>
