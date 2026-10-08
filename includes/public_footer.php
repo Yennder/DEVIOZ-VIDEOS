@@ -18,6 +18,7 @@ Plataforma tecnológica de videos y aprendizaje
 
 
 <script src="../assets/js/public.js"></script>
+<script src="../assets/js/portada_catalogo.js?v=4.5.1"></script>
 
 
 </body>

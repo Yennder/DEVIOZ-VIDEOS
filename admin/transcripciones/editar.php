@@ -64,6 +64,7 @@ function tiempoAdmin(float $segundos): string
         </div>
         <div class="acciones-contenedor">
             <a class="btn-limpiar" href="listar.php">Volver</a>
+            <a class="btn-editar" href="capitulos.php?id_video=<?php echo (int)$idVideo; ?>">✨ Capítulos IA</a>
             <a class="btn" href="descargar_vtt.php?id_video=<?php echo (int)$idVideo; ?>">Descargar VTT</a>
         </div>
     </div>

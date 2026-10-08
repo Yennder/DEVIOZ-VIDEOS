@@ -7,6 +7,7 @@ require_once "../controllers/InteraccionController.php";
 require_once "../controllers/TranscripcionController.php";
 require_once "../includes/video_security.php";
 require_once "../controllers/DescargaController.php";
+require_once "../controllers/CapituloIAController.php";
 
 $videoController = new VideoController();
 $temporadaController = new TemporadaController();
@@ -120,6 +121,22 @@ try
 catch(Throwable $e)
 {
     error_log("TECHFLIX V3 - No se pudo cargar transcripcion: " . $e->getMessage());
+}
+
+// V4.4.3 - Capitulos inteligentes publicados. Solo se muestran versiones
+// revisadas y publicadas por un administrador.
+$capitulosInteligentes = [];
+try
+{
+    $capituloIAController = new CapituloIAController();
+    if($capituloIAController->tablasDisponibles())
+    {
+        $capitulosInteligentes = $capituloIAController->publicadosVideo((int)$id);
+    }
+}
+catch(Throwable $e)
+{
+    error_log("TECHFLIX V4.4.3 - No se pudieron cargar capitulos inteligentes: " . $e->getMessage());
 }
 
 // CONTEXTO DE LEARNING LAB (no altera la reproducción normal)
@@ -948,6 +965,75 @@ Descripción
 </section>
 <?php endif; ?>
 
+<?php if(!empty($capitulosInteligentes)): ?>
+<section class="smart-chapters-card" id="capitulosInteligentes" data-smart-chapters>
+    <div class="smart-chapters-heading">
+        <div>
+            <span class="section-kicker">DEVIOZ AI · V4.4.3</span>
+            <h2>Capítulos inteligentes · Aprender por escenas</h2>
+            <p>Navega por los cambios de tema detectados en la transcripción. Estos capítulos fueron revisados y publicados por un administrador.</p>
+        </div>
+        <div class="smart-chapters-badges">
+            <span class="smart-chapters-badge"><?php echo count($capitulosInteligentes); ?> escenas</span>
+            <span class="smart-chapters-badge">✓ Revisado</span>
+        </div>
+    </div>
+
+    <div class="smart-chapter-current" data-current-chapter hidden>
+        <span>Escena actual</span>
+        <strong data-current-chapter-title></strong>
+    </div>
+    <div class="smart-chapter-notice" data-smart-chapter-notice hidden></div>
+
+    <div class="smart-chapters-list">
+        <?php foreach($capitulosInteligentes as $capituloIndex => $capitulo): ?>
+        <?php
+            $capInicio = max(0, (float)($capitulo["inicio_segundos"] ?? 0));
+            $capFin = max($capInicio, (float)($capitulo["fin_segundos"] ?? $capInicio));
+            $capInicioEntero = (int)round($capInicio);
+            $capFinEntero = (int)round($capFin);
+            $capFmt = static function(int $total): string {
+                $h = intdiv($total, 3600);
+                $resto = $total % 3600;
+                $m = intdiv($resto, 60);
+                $seg = $resto % 60;
+                return $h > 0 ? sprintf("%02d:%02d:%02d", $h, $m, $seg) : sprintf("%02d:%02d", $m, $seg);
+            };
+        ?>
+        <article
+            class="smart-chapter-item"
+            data-smart-chapter
+            data-chapter-start="<?php echo htmlspecialchars((string)$capInicio); ?>"
+            data-chapter-end="<?php echo htmlspecialchars((string)$capFin); ?>"
+            data-chapter-title="<?php echo htmlspecialchars((string)$capitulo["titulo"], ENT_QUOTES, "UTF-8"); ?>"
+        >
+            <div class="smart-chapter-index"><?php echo str_pad((string)($capituloIndex + 1), 2, "0", STR_PAD_LEFT); ?></div>
+            <div class="smart-chapter-main">
+                <div class="smart-chapter-top">
+                    <h3><?php echo htmlspecialchars((string)$capitulo["titulo"]); ?></h3>
+                    <span class="smart-chapter-time"><?php echo htmlspecialchars($capFmt($capInicioEntero)); ?> - <?php echo htmlspecialchars($capFmt($capFinEntero)); ?></span>
+                </div>
+                <?php if(trim((string)($capitulo["resumen"] ?? "")) !== ""): ?>
+                <p class="smart-chapter-summary"><?php echo htmlspecialchars((string)$capitulo["resumen"]); ?></p>
+                <?php endif; ?>
+                <?php if(!empty($capitulo["conceptos"]) && is_array($capitulo["conceptos"])): ?>
+                <div class="smart-chapter-tags">
+                    <?php foreach($capitulo["conceptos"] as $concepto): ?>
+                    <span class="smart-chapter-tag"><?php echo htmlspecialchars((string)$concepto); ?></span>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+                <div class="smart-chapter-actions">
+                    <button type="button" class="smart-chapter-seek" data-chapter-seek>▶ Ir a esta escena</button>
+                    <span class="smart-chapter-progress"><i data-chapter-progress></i></span>
+                </div>
+            </div>
+        </article>
+        <?php endforeach; ?>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php if($transcripcionVideo && ($transcripcionVideo["estado"] ?? "") === "completada" && !empty($transcripcionSegmentos)): ?>
 <section class="video-transcript-card" id="transcripcionVideo">
     <div class="video-transcript-heading">
@@ -1557,4 +1643,5 @@ $deviozAiCourseId = $learningContext ? (int)($learningContext["id_curso"] ?? 0) 
 $deviozAiCourseTitle = $learningContext ? (string)($learningContext["curso"] ?? "") : "";
 $deviozAiCourseContextAvailable = $deviozAiCourseId > 0;
 ?>
+<script src="../assets/js/capitulos.js"></script>
 <?php include "../includes/public_footer.php"; ?>

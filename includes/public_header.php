@@ -7,5 +7,6 @@
 <meta name="color-scheme" content="light dark">
 <title>DEVIOZ VIDEOS</title>
 <link rel="stylesheet" href="../assets/css/public.css">
+<link rel="stylesheet" href="../assets/css/capitulos.css">
 </head>
 <body>

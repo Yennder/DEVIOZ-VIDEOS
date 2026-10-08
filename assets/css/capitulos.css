@@ -1,0 +1,22 @@
+.smart-chapters-card{margin:22px 0;padding:22px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(135deg,var(--surface),color-mix(in srgb,var(--accent) 5%,var(--surface)));display:grid;gap:16px}
+.smart-chapters-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.smart-chapters-heading h2{margin:4px 0 6px}.smart-chapters-heading p{margin:0;color:var(--text-soft);max-width:760px}
+.smart-chapters-badges{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.smart-chapters-badge{display:inline-flex;align-items:center;padding:7px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface-2);color:var(--text-soft);font-size:.72rem;font-weight:800;white-space:nowrap}
+.smart-chapter-current{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--border));border-radius:13px;background:var(--accent-soft);color:var(--text)}
+.smart-chapter-current span{font-size:.72rem;font-weight:850;color:var(--accent-strong);text-transform:uppercase;letter-spacing:.04em}.smart-chapter-current strong{font-size:.88rem}.smart-chapter-current[hidden]{display:none}
+.smart-chapter-notice{padding:10px 12px;border-radius:11px;border:1px solid color-mix(in srgb,#ffb020 35%,var(--border));background:color-mix(in srgb,#ffb020 8%,var(--surface));color:var(--text-soft);font-size:.78rem}.smart-chapter-notice[hidden]{display:none}
+.smart-chapters-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.smart-chapter-item{position:relative;border:1px solid var(--border);border-radius:14px;background:var(--surface-2);padding:14px;display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;transition:.18s}
+.smart-chapter-item:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--border));transform:translateY(-1px)}
+.smart-chapter-item.is-active{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 9%,transparent)}
+.smart-chapter-index{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 12%,var(--surface));color:var(--accent-strong);font-weight:900;font-size:.8rem}
+.smart-chapter-main{min-width:0;display:grid;gap:7px}.smart-chapter-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.smart-chapter-main h3{margin:0;font-size:.92rem;color:var(--text)}
+.smart-chapter-time{font-family:Consolas,monospace;font-size:.7rem;font-weight:800;color:var(--accent-strong);white-space:nowrap}
+.smart-chapter-summary{margin:0;color:var(--text-soft);font-size:.78rem;line-height:1.55}
+.smart-chapter-tags{display:flex;flex-wrap:wrap;gap:6px}.smart-chapter-tag{display:inline-flex;padding:5px 8px;border:1px solid color-mix(in srgb,var(--accent) 24%,var(--border));border-radius:999px;background:color-mix(in srgb,var(--accent) 6%,var(--surface));font-size:.66rem;color:var(--text-soft)}
+.smart-chapter-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}.smart-chapter-seek{border:0;background:transparent;color:var(--accent-strong);font-size:.73rem;font-weight:850;padding:0;cursor:pointer}.smart-chapter-seek:hover{text-decoration:underline}
+.smart-chapter-progress{height:4px;border-radius:999px;background:color-mix(in srgb,var(--border) 70%,transparent);overflow:hidden;flex:1}.smart-chapter-progress i{display:block;width:0;height:100%;background:var(--accent);transition:width .2s linear}
+@media(max-width:900px){.smart-chapters-heading{flex-direction:column}.smart-chapters-badges{justify-content:flex-start}.smart-chapters-list{grid-template-columns:1fr}}
+@media(max-width:560px){.smart-chapters-card{padding:16px}.smart-chapter-item{grid-template-columns:42px minmax(0,1fr);padding:12px}.smart-chapter-index{width:38px;height:38px;border-radius:10px}.smart-chapter-top{align-items:flex-start;flex-direction:column;gap:4px}}
+@media(prefers-reduced-motion:reduce){.smart-chapter-item,.smart-chapter-progress i{transition:none}.smart-chapter-item:hover{transform:none}}
