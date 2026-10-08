@@ -18,14 +18,28 @@ if (!isset($generosPublicos)) {
 
     <?php if(usuarioAutenticado()): ?>
     <div class="sidebar-section">
-        <span class="sidebar-eyebrow">Learning Lab</span>
-        <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mi aprendizaje</a>
-        <a href="progreso.php" class="<?php echo $paginaActual === 'progreso.php' ? 'menu-publico-activo' : ''; ?>"><span>↗</span>Mi progreso</a>
-        <a href="skills.php" class="<?php echo $paginaActual === 'skills.php' ? 'menu-publico-activo' : ''; ?>"><span>🧩</span>Mis skills</a>
-        <a href="logros.php" class="<?php echo $paginaActual === 'logros.php' ? 'menu-publico-activo' : ''; ?>"><span>🏅</span>Mis logros</a>
-        <a href="certificados.php" class="<?php echo $paginaActual === 'certificados.php' ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mis certificados</a>
-        <a href="notificaciones.php" class="<?php echo $paginaActual === 'notificaciones.php' ? 'menu-publico-activo' : ''; ?>"><span>🔔</span>Notificaciones</a>
-        <a href="solicitudes_descarga.php" class="<?php echo in_array($paginaActual, ['solicitudes_descarga.php','solicitud_descarga.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🔐</span>Mis solicitudes</a>
+        <?php
+        $learningAbierto = in_array($paginaActual, [
+            'aprendizaje.php', 'curso.php', 'evaluacion.php', 'progreso.php',
+            'skills.php', 'logros.php', 'certificados.php', 'notificaciones.php',
+            'solicitudes_descarga.php', 'solicitud_descarga.php'
+        ], true);
+        ?>
+        <details class="learning-sidebar-nav" <?php echo $learningAbierto ? 'open' : ''; ?>>
+            <summary class="sidebar-eyebrow learning-sidebar-summary">
+                <span>Learning Lab</span>
+                <span class="learning-sidebar-chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="learning-sidebar-list">
+                <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mi aprendizaje</a>
+                <a href="progreso.php" class="<?php echo $paginaActual === 'progreso.php' ? 'menu-publico-activo' : ''; ?>"><span>↗</span>Mi progreso</a>
+                <a href="skills.php" class="<?php echo $paginaActual === 'skills.php' ? 'menu-publico-activo' : ''; ?>"><span>🧩</span>Mis skills</a>
+                <a href="logros.php" class="<?php echo $paginaActual === 'logros.php' ? 'menu-publico-activo' : ''; ?>"><span>🏅</span>Mis logros</a>
+                <a href="certificados.php" class="<?php echo $paginaActual === 'certificados.php' ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mis certificados</a>
+                <a href="notificaciones.php" class="<?php echo $paginaActual === 'notificaciones.php' ? 'menu-publico-activo' : ''; ?>"><span>🔔</span>Notificaciones</a>
+                <a href="solicitudes_descarga.php" class="<?php echo in_array($paginaActual, ['solicitudes_descarga.php','solicitud_descarga.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🔐</span>Mis solicitudes</a>
+            </div>
+        </details>
     </div>
     <div class="sidebar-section">
         <span class="sidebar-eyebrow">Mi biblioteca</span>
@@ -59,16 +73,14 @@ if (!isset($generosPublicos)) {
     </div>
     <?php if (!empty($generosPublicos)): ?>
     <div class="sidebar-section">
-        <details class="genre-sidebar-nav" <?php echo $generoActual !== '' ? 'open' : ''; ?>>
-            <summary>Géneros</summary>
-            <div class="genre-sidebar-list">
+        <span class="sidebar-eyebrow">Géneros</span>
+        <div class="genre-sidebar-list">
                 <?php foreach ($generosPublicos as $gen): ?>
                 <a href="index.php?genero=<?php echo (int)$gen['id_genero']; ?>" class="<?php echo $paginaActual === 'index.php' && $generoActual === (string)$gen['id_genero'] ? 'menu-publico-activo' : ''; ?>">
                     <span>◇</span><?php echo htmlspecialchars($gen['nombre'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
                 <?php endforeach; ?>
-            </div>
-        </details>
+        </div>
     </div>
     <?php endif; ?>
 </aside>
