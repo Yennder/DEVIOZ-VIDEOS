@@ -970,7 +970,7 @@ Descripción
     <div class="smart-chapters-heading">
         <div>
             <span class="section-kicker">DEVIOZ AI · V4.4.3</span>
-            <h2>Capítulos inteligentes · Aprender por escenas</h2>
+            <h2>Capítulos inteligentes · Navegación por temas</h2>
             <p>Navega por los cambios de tema detectados en la transcripción. Estos capítulos fueron revisados y publicados por un administrador.</p>
         </div>
         <div class="smart-chapters-badges">

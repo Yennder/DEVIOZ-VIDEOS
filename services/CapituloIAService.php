@@ -151,9 +151,9 @@ class CapituloIAService
             if ($titulo === '') {
                 continue;
             }
-            $inicio = $this->parsearTiempo($fila['inicio'] ?? 0);
-            if ($duracion > 0) {
-                $inicio = min($duracion, $inicio);
+            $inicio = $this->parsearTiempoEditor($fila['inicio'] ?? '');
+            if ($duracion > 0 && $inicio >= $duracion) {
+                throw new RuntimeException('El inicio de cada capitulo debe estar antes del final del video.');
             }
             $limpios[] = [
                 'inicio_segundos' => max(0, $inicio),
@@ -173,7 +173,7 @@ class CapituloIAService
         foreach ($limpios as $capitulo) {
             $clave = number_format((float)$capitulo['inicio_segundos'], 3, '.', '');
             if (isset($vistos[$clave])) {
-                continue;
+                throw new RuntimeException('Hay capitulos que empiezan en el mismo segundo. Ajusta sus tiempos de inicio.');
             }
             $vistos[$clave] = true;
             $sinDuplicados[] = $capitulo;
@@ -188,6 +188,13 @@ class CapituloIAService
         $generacion = $this->model->obtenerGeneracion($idGeneracion);
         if (!$generacion || (int)$generacion['id_video'] !== $idVideo) {
             throw new RuntimeException('La propuesta indicada no pertenece a este video.');
+        }
+        // Do not publish a stale draft. Previously generated chapters remain
+        // editable, but require fresh transcription-based generation to go live.
+        $fuente = $this->prepararFuente($idVideo, false);
+        if (empty($fuente['disponible']) || empty($fuente['hash']) ||
+            !hash_equals((string)$generacion['fuente_hash'], (string)$fuente['hash'])) {
+            throw new RuntimeException('La transcripcion cambio o ya no esta disponible. Regenera los capitulos antes de publicar.');
         }
         $this->model->publicar($idGeneracion, $idUsuario);
     }
@@ -498,6 +505,28 @@ TXT;
             }
         }
         return array_values(array_unique($salida));
+    }
+
+    /** Parse editor input strictly: seconds, MM:SS or HH:MM:SS. */
+    private function parsearTiempoEditor(mixed $valor): float
+    {
+        if (!is_scalar($valor)) {
+            throw new RuntimeException('El tiempo de inicio no tiene un formato valido.');
+        }
+        $texto = trim((string)$valor);
+        if ($texto === '') {
+            throw new RuntimeException('Especifica el tiempo de inicio de cada capitulo.');
+        }
+        if (preg_match('/^\d+(?:\.\d{1,3})?$/D', $texto)) {
+            return (float)$texto;
+        }
+        if (preg_match('/^(\d+):([0-5]\d)$/D', $texto, $partes)) {
+            return ((int)$partes[1] * 60) + (int)$partes[2];
+        }
+        if (preg_match('/^(\d+):([0-5]\d):([0-5]\d)$/D', $texto, $partes)) {
+            return ((int)$partes[1] * 3600) + ((int)$partes[2] * 60) + (int)$partes[3];
+        }
+        throw new RuntimeException('Tiempo de inicio invalido: usa MM:SS o HH:MM:SS (ejemplo 02:35).');
     }
 
     private function parsearTiempo(mixed $valor): float

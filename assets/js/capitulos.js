@@ -9,6 +9,10 @@
     const currentTitle = section.querySelector('[data-current-chapter-title]');
     const notice = section.querySelector('[data-smart-chapter-notice]');
     let lastActive = -1;
+    const learningConfig = window.DEVIOZ_INTERACTIONS || {};
+    // Learning progress grows while the user watches. A static max from page load
+    // would keep newly watched scenes locked until refreshing the page.
+    let maxWatchedNow = Math.max(0, Number(learningConfig.learningMaxSeconds || 0));
 
     const showNotice = (message) => {
         if(!notice) return;
@@ -19,10 +23,8 @@
     };
 
     const learningAllows = (target) => {
-        const cfg = window.DEVIOZ_INTERACTIONS || {};
-        if(!cfg.learningMode || cfg.learningLessonCompleted) return true;
-        const max = Number(cfg.learningMaxSeconds || 0);
-        if(target <= max + 2) return true;
+        if(!learningConfig.learningMode || learningConfig.learningLessonCompleted) return true;
+        if(target <= maxWatchedNow + 2.5) return true;
         showNotice('Esta escena todavía está bloqueada por el avance secuencial de la capacitación. Continúa viendo el video para desbloquearla.');
         return false;
     };
@@ -66,7 +68,13 @@
         });
     });
 
-    player.addEventListener('timeupdate',()=>setActive(Number(player.currentTime || 0)));
+    player.addEventListener('timeupdate',()=>{
+        const current = Math.max(0, Number(player.currentTime || 0));
+        if(learningConfig.learningMode && !learningConfig.learningLessonCompleted && !player.seeking) {
+            maxWatchedNow = Math.max(maxWatchedNow, current);
+        }
+        setActive(current);
+    });
     player.addEventListener('loadedmetadata',()=>setActive(Number(player.currentTime || 0)));
     setActive(Number(player.currentTime || 0));
 })();

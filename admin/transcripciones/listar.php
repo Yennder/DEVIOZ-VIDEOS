@@ -228,6 +228,7 @@ function workerStateLabel(array $status): string
                             <div class="acciones-contenedor transcription-actions">
                             <?php if ($estadoActual === 'completada'): ?>
                                 <a class="btn-editar" href="editar.php?id_video=<?php echo (int)$item['id_video']; ?>">Ver / editar</a>
+                                <a class="btn-editar" href="capitulos.php?id_video=<?php echo (int)$item['id_video']; ?>" title="Generar, revisar y publicar capitulos inteligentes">Capitulos IA</a>
                                 <a class="btn-editar" href="descargar_vtt.php?id_video=<?php echo (int)$item['id_video']; ?>">VTT</a>
                                 <form method="POST" action="accion.php" class="inline-delete-form" onsubmit="return confirm('Se reemplazara la transcripcion actual. Continuar?')">
                                     <?php echo csrfInput(); ?>

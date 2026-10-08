@@ -157,6 +157,7 @@ function capituloConceptosTexto(array $conceptos): string
                 <h2>Edita antes de publicar</h2>
                 <?php $proveedorTexto = trim(implode(' · ', array_filter([(string)($gen['proveedor'] ?? ''), (string)($gen['modelo'] ?? '')]))); ?>
                 <p>Proveedor: <strong><?php echo htmlspecialchars($proveedorTexto !== '' ? $proveedorTexto : '-'); ?></strong> · generado <?php echo htmlspecialchars(capituloFecha($gen['fecha_generacion'] ?? null)); ?></p>
+                <p>Indica los inicios en MM:SS o HH:MM:SS. El fin de cada escena se calcula usando el inicio de la siguiente.</p>
             </div>
             <form method="POST" action="capitulos_accion.php" onsubmit="return confirm('¿Descartar este borrador? La versión publicada no se modificará.')">
                 <?php echo csrfInput(); ?>
@@ -213,7 +214,11 @@ function capituloConceptosTexto(array $conceptos): string
                 </div>
                 <div class="acciones-contenedor">
                     <button type="submit" name="accion" value="guardar" class="btn-editar">Guardar borrador</button>
+                    <?php if (!empty($estado['borrador_desactualizado']) || !$estado['fuente_disponible']): ?>
+                    <button type="button" class="btn" disabled title="Primero regenera la propuesta usando la transcripcion actual">Publicacion no disponible</button>
+                    <?php else: ?>
                     <button type="submit" name="accion" value="guardar_publicar" class="btn" onclick="return confirm('¿Guardar y publicar estos capítulos para los usuarios?')">✓ Guardar y publicar</button>
+                    <?php endif; ?>
                 </div>
             </div>
         </form>

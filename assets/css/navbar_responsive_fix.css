@@ -1,0 +1,93 @@
+/* DEVIOZ V4.5.1.2 - Separate responsive fix for the public navigation. */
+/* Switch to a compact header before the search can overlap navigation. */
+@media (max-width: 1600px) {
+    .public-navbar {
+        grid-template-columns: max-content minmax(180px, 1fr) max-content;
+        gap: 12px;
+    }
+    .public-navbar-left { gap: 10px; }
+    .public-navbar .public-nav-links:not(.is-mobile-open) { display: none !important; }
+    .public-navbar .public-menu-toggle { display: grid; place-items: center; flex: 0 0 40px; }
+    .public-navbar .search-box { width: 100%; min-width: 0; }
+    .public-navbar .search-box form { min-width: 0; max-width: 100%; box-sizing: border-box; }
+}
+@media (max-width: 1200px) {
+    .public-navbar .public-nav-links.is-mobile-open {
+        display: flex;
+        z-index: 1200;
+    }
+}
+/* Mobile navigation is the existing sidebar. Do not open a second, overlapping dropdown. */
+@media (max-width: 960px) {
+    .public-navbar .public-nav-links,
+    .public-navbar .public-nav-links.is-mobile-open { display: none !important; }
+    .public-sidebar.is-mobile-open { z-index: 1080; }
+    .public-menu-backdrop {
+        display: block;
+        position: fixed;
+        inset: 72px 0 0;
+        z-index: 940;
+        background: rgba(2, 10, 17, .57);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity .2s ease, visibility .2s ease;
+    }
+    body.public-menu-open .public-menu-backdrop {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+    body.public-menu-open { overflow: hidden; }
+}
+@media (max-width: 700px) {
+    .public-navbar {
+        grid-template-columns: minmax(0, 1fr) max-content;
+        gap: 8px;
+        padding: 9px 10px;
+    }
+    .public-navbar-left { grid-column: 1; grid-row: 1; min-width: 0; }
+    .public-navbar-actions { grid-column: 2; grid-row: 1; min-width: 0; }
+    .public-navbar .search-box {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        min-width: 0;
+        max-width: 100%;
+    }
+    .public-navbar .search-box input { min-width: 0; }
+    .public-navbar .public-logo img { max-width: 112px; }
+    .public-menu-backdrop { top: 120px; }
+    .public-sidebar.is-mobile-open { top: 120px; height: calc(100dvh - 120px); }
+}
+@media (max-width: 420px) {
+    .public-navbar .public-logo img { max-width: 94px; }
+    .public-navbar-actions { gap: 5px; }
+    .public-navbar .theme-control { padding: 3px; }
+    .public-navbar .search-box button { padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .public-menu-backdrop { transition: none; }
+}
+@media (min-width: 1201px) and (max-width: 1600px) {
+    .public-navbar .public-nav-links.is-mobile-open {
+        display: flex !important;
+        position: fixed;
+        top: 74px;
+        left: 18px;
+        right: auto;
+        z-index: 1200;
+        min-width: 220px;
+        padding: 9px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 3px;
+        border: 1px solid var(--border);
+        border-radius: 13px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+    }
+    .public-navbar .public-nav-links.is-mobile-open a {
+        display: flex !important;
+        padding: 10px 11px;
+    }
+}

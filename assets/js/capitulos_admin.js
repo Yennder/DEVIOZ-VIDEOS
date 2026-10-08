@@ -15,11 +15,16 @@
             : [m,s].map(v=>String(v).padStart(2,'0')).join(':');
     };
     const parseTime = (value) => {
-        const parts = String(value || '').trim().split(':').map(Number);
-        if(parts.some(Number.isNaN)) return 0;
-        if(parts.length === 2) return Math.max(0, parts[0]*60 + parts[1]);
-        if(parts.length === 3) return Math.max(0, parts[0]*3600 + parts[1]*60 + parts[2]);
-        return Math.max(0, Number(value || 0));
+        const text = String(value ?? '').trim();
+        if(/^\d+(?:\.\d{1,3})?$/.test(text)) return Number(text);
+        const parts = text.split(':');
+        if(parts.length === 2 && /^\d+$/.test(parts[0]) && /^[0-5]\d$/.test(parts[1])) {
+            return Number(parts[0]) * 60 + Number(parts[1]);
+        }
+        if(parts.length === 3 && /^\d+$/.test(parts[0]) && /^[0-5]\d$/.test(parts[1]) && /^[0-5]\d$/.test(parts[2])) {
+            return Number(parts[0]) * 3600 + Number(parts[1]) * 60 + Number(parts[2]);
+        }
+        return NaN;
     };
     const renumber = () => {
         list.querySelectorAll('[data-chapter-row]').forEach((row,index)=>{
@@ -47,7 +52,8 @@
         const rows = Array.from(list.querySelectorAll('[data-chapter-row]'));
         const lastStart = rows.length ? parseTime(rows[rows.length-1].querySelector('input[name="inicio[]"]')?.value) : 0;
         const duration = Number(list.dataset.duration || 0);
-        const suggested = duration > 0 ? Math.min(duration, lastStart + 60) : lastStart + 60;
+        const remaining = Math.max(0, duration - lastStart);
+        const suggested = duration > 0 ? lastStart + Math.min(60, Math.max(0, Math.floor(remaining / 2))) : lastStart + 60;
         const row = document.createElement('article');
         row.className = 'ai-chapter-editor-row';
         row.setAttribute('data-chapter-row','');
@@ -66,6 +72,38 @@
         bindRemove(row);
         row.querySelector('input[name="titulo[]"]')?.focus();
     });
+
+    const form = document.getElementById('chapterDraftForm');
+    if(form) {
+        form.addEventListener('input', (event) => {
+            if(event.target.matches('input[name="inicio[]"]')) event.target.setCustomValidity('');
+        });
+        form.addEventListener('submit', (event) => {
+            const inputs = Array.from(list.querySelectorAll('input[name="inicio[]"]'));
+            const duration = Number(list.dataset.duration || 0);
+            const used = new Set();
+            for(const input of inputs) {
+                input.setCustomValidity('');
+                const seconds = parseTime(input.value);
+                let error = '';
+                if(!Number.isFinite(seconds) || seconds < 0) {
+                    error = 'Usa MM:SS o HH:MM:SS, por ejemplo 02:35.';
+                } else if(duration > 0 && seconds >= duration) {
+                    error = 'El inicio debe ser anterior a la duracion del video.';
+                } else if(used.has(seconds.toFixed(3))) {
+                    error = 'Dos capitulos no pueden empezar en el mismo momento.';
+                }
+                if(error) {
+                    event.preventDefault();
+                    input.setCustomValidity(error);
+                    input.reportValidity();
+                    input.focus();
+                    return;
+                }
+                used.add(seconds.toFixed(3));
+            }
+        });
+    }
 
     bindRemove();
 })();
