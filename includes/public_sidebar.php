@@ -2,13 +2,18 @@
 $paginaActual = basename($_SERVER['PHP_SELF'] ?? 'index.php');
 $categoriaActual = isset($_GET['categoria']) ? (string)$_GET['categoria'] : null;
 $categorias = $categorias ?? [];
+$generoActual = isset($_GET['genero']) && ctype_digit((string)$_GET['genero']) ? (string)$_GET['genero'] : '';
+if (!isset($generosPublicos)) {
+    require_once __DIR__ . '/../models/Genero.php';
+    try { $generosPublicos = (new Genero())->listar(true); }
+    catch (Throwable $e) { $generosPublicos = []; }
+}
 ?>
 
 <aside class="public-sidebar" id="publicSidebar">
     <div class="sidebar-section">
         <span class="sidebar-eyebrow">Explorar</span>
-        <a href="index.php" class="<?php echo $paginaActual === 'index.php' && empty($categoriaActual) ? 'menu-publico-activo' : ''; ?>"><span>⌂</span>Inicio</a>
-        <a href="series.php" class="<?php echo in_array($paginaActual, ['series.php','detalle_serie.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>▣</span>Series</a>
+        <a href="index.php" class="<?php echo $paginaActual === 'index.php' && empty($categoriaActual) && $generoActual === '' ? 'menu-publico-activo' : ''; ?>"><span>⌂</span>Inicio</a>
     </div>
 
     <?php if(usuarioAutenticado()): ?>
@@ -36,10 +41,34 @@ $categorias = $categorias ?? [];
             <p class="sidebar-empty">Aún no hay categorías.</p>
         <?php else: ?>
             <?php foreach($categorias as $cat): ?>
-                <a href="index.php?categoria=<?php echo (int)$cat['id_categoria']; ?>" class="<?php echo $paginaActual === 'index.php' && $categoriaActual === (string)$cat['id_categoria'] ? 'menu-publico-activo' : ''; ?>">
-                    <span>◇</span><?php echo htmlspecialchars($cat['nombre']); ?>
+                <?php
+                    $esCategoriaSerie = $cat['nombre'] === 'Serie';
+                    $urlCategoria = $esCategoriaSerie ? 'series.php' : 'index.php?categoria=' . (int)$cat['id_categoria'];
+                    $activaCategoria = $esCategoriaSerie
+                        ? in_array($paginaActual, ['series.php','detalle_serie.php'], true)
+                        : $paginaActual === 'index.php' && $categoriaActual === (string)$cat['id_categoria'];
+                ?>
+                <a href="<?php echo $urlCategoria; ?>" class="<?php echo $activaCategoria ? 'menu-publico-activo' : ''; ?>">
+                    <span>◇</span><?php echo htmlspecialchars($cat['nombre'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
+                <?php if ($cat['nombre'] === 'Educacional'): ?>
+                <a class="genre-course-side-link" href="<?php echo usuarioAutenticado() ? 'aprendizaje.php' : '../views/login.php'; ?>"><span>🎓</span>Explorar cursos</a>
+                <?php endif; ?>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+    <?php if (!empty($generosPublicos)): ?>
+    <div class="sidebar-section">
+        <details class="genre-sidebar-nav" <?php echo $generoActual !== '' ? 'open' : ''; ?>>
+            <summary>Géneros</summary>
+            <div class="genre-sidebar-list">
+                <?php foreach ($generosPublicos as $gen): ?>
+                <a href="index.php?genero=<?php echo (int)$gen['id_genero']; ?>" class="<?php echo $paginaActual === 'index.php' && $generoActual === (string)$gen['id_genero'] ? 'menu-publico-activo' : ''; ?>">
+                    <span>◇</span><?php echo htmlspecialchars($gen['nombre'], ENT_QUOTES, 'UTF-8'); ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </details>
+    </div>
+    <?php endif; ?>
 </aside>

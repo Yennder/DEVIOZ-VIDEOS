@@ -5,6 +5,35 @@ require_once __DIR__ . "/../config/conexion.php";
 
 class Video
 {
+    /** Guarda las etiquetas en la misma transaccion que el video. */
+    private function sincronizarGenerosVideo(int $idVideo, array $seleccionados): void
+    {
+        if (count($seleccionados) > 40) throw new InvalidArgumentException('Demasiados generos');
+        $ids = [];
+        foreach ($seleccionados as $id) {
+            if (!is_scalar($id) || !ctype_digit((string)$id) || (int)$id <= 0) {
+                throw new InvalidArgumentException('Genero no valido');
+            }
+            $ids[] = (int)$id;
+        }
+        $ids = array_values(array_unique($ids));
+        if ($ids) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $st = $this->conexion->prepare("SELECT id_genero FROM generos WHERE estado=1 AND id_genero IN ($placeholders)");
+            $st->execute($ids);
+            if (count($st->fetchAll(PDO::FETCH_COLUMN)) !== count($ids)) {
+                throw new InvalidArgumentException('Uno de los generos seleccionados no esta activo');
+            }
+        }
+        $st = $this->conexion->prepare('DELETE FROM video_generos WHERE id_video = :id');
+        $st->execute([':id'=>$idVideo]);
+        if ($ids) {
+            $insert = $this->conexion->prepare('INSERT INTO video_generos (id_video, id_genero) VALUES (:video,:genero)');
+            foreach ($ids as $generoId) $insert->execute([':video'=>$idVideo, ':genero'=>$generoId]);
+        }
+    }
+
+
 
     private $conexion;
 
@@ -20,7 +49,7 @@ class Video
 
 // BUSCAR VIDEOS PUBLICOS
 
-public function buscarPublicos($texto = "", $categoria = "", $orden = "recientes")
+public function buscarPublicos($texto = "", $categoria = "", $orden = "recientes", $genero = "")
 {
     $sql = "
         SELECT
@@ -45,6 +74,14 @@ public function buscarPublicos($texto = "", $categoria = "", $orden = "recientes
     {
         $sql .= " AND videos.id_categoria = :categoria ";
         $parametros[":categoria"] = $categoria;
+    }
+
+    if ($genero !== "")
+    {
+        $sql .= " AND EXISTS (SELECT 1 FROM video_generos vg
+                  INNER JOIN generos g ON g.id_genero=vg.id_genero
+                  WHERE vg.id_video=videos.id_video AND vg.id_genero=:genero AND g.estado=1) ";
+        $parametros[":genero"] = (int)$genero;
     }
 
     switch ($orden)
@@ -267,7 +304,8 @@ public function listarCategorias()
 
     WHERE estado=1
 
-    ORDER BY nombre
+    ORDER BY FIELD(nombre, 'Serie', 'Películas', 'Documentales', 'Laboratorio', 'Educacional') = 0,
+             FIELD(nombre, 'Serie', 'Películas', 'Documentales', 'Laboratorio', 'Educacional'), nombre
 
     ";
 
@@ -291,7 +329,8 @@ public function listarCategorias()
 
         $sql = "SELECT * FROM categorias
                 WHERE estado=1
-                ORDER BY nombre";
+                ORDER BY FIELD(nombre, 'Serie', 'Películas', 'Documentales', 'Laboratorio', 'Educacional') = 0,
+                         FIELD(nombre, 'Serie', 'Películas', 'Documentales', 'Laboratorio', 'Educacional'), nombre";
 
 
         $stmt = $this->conexion->prepare($sql);
@@ -379,7 +418,9 @@ public function crear($datos)
 
 
 
-    return $stmt->execute([
+    try {
+    $this->conexion->beginTransaction();
+    $registrado = $stmt->execute([
 
 
 
@@ -423,7 +464,15 @@ public function crear($datos)
 
 
     ]);
-
+    if (!$registrado) throw new RuntimeException('No se pudo insertar el video');
+    $this->sincronizarGenerosVideo((int)$this->conexion->lastInsertId(), $datos['generos'] ?? []);
+    $this->conexion->commit();
+    return true;
+    } catch (Throwable $e) {
+        if ($this->conexion->inTransaction()) $this->conexion->rollBack();
+        error_log('DEVIOZ: no se pudo guardar video y generos: '.$e->getMessage());
+        return false;
+    }
 
 }
 
@@ -644,7 +693,9 @@ public function actualizar($datos)
 
 
 
-    return $stmt->execute([
+    try {
+    $this->conexion->beginTransaction();
+    $actualizado = $stmt->execute([
 
 
 
@@ -683,7 +734,15 @@ public function actualizar($datos)
 
 
     ]);
-
+    if (!$actualizado) throw new RuntimeException('No se pudo actualizar el video');
+    $this->sincronizarGenerosVideo((int)$datos['id'], $datos['generos'] ?? []);
+    $this->conexion->commit();
+    return true;
+    } catch (Throwable $e) {
+        if ($this->conexion->inTransaction()) $this->conexion->rollBack();
+        error_log('DEVIOZ: no se pudo actualizar video y generos: '.$e->getMessage());
+        return false;
+    }
 
 }
 

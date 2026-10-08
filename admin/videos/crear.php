@@ -16,6 +16,11 @@ $videoController = new VideoController();
 
 
 $categorias = $videoController->categorias();
+require_once '../../models/Genero.php';
+$generoModel = new Genero();
+$generosDisponibles = $generoModel->listar(true);
+$generosSeleccionados = [];
+
 
 $series = $videoController->series();
 
@@ -29,6 +34,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST")
 {
 
     verificarCsrfPost();
+    $generosSeleccionados = is_array($_POST['generos'] ?? null) ? $_POST['generos'] : [];
+
 
 
     $videoArchivo = false;
@@ -96,6 +103,8 @@ if($_SERVER["REQUEST_METHOD"] == "POST")
 
         $datos = [
 
+
+            "generos" => $generosSeleccionados,
 
             "categoria" =>
                 $_POST["categoria"],
@@ -225,6 +234,7 @@ Crear Video - DEVIOZ VIDEOS
 rel="stylesheet"
 href="../../assets/css/admin.css"
 >
+<link rel="stylesheet" href="../../assets/css/generos.css?v=4.5.2">
 
 
 </head>
@@ -527,6 +537,9 @@ value="<?php echo $categoria["id_categoria"]; ?>"
 
 
 </select>
+<p class="genre-muted">Si es un episodio, selecciona el tipo "Serie / Capítulo" y la categoría "Serie". Para películas, documentales y laboratorios utiliza "Video independiente".</p>
+<?php include '../../includes/admin_video_generos.php'; ?>
+
 
 
 </div>

@@ -139,6 +139,10 @@ class="<?php echo menuActivo('/admin/categorias/'); ?>"
 
 </a>
 
+<a href="/DEVIOZ-VIDEOS/admin/generos/listar.php" class="<?php echo menuActivo('/admin/generos/'); ?>">
+🏷️ Géneros
+</a>
+
 <a
 href="/DEVIOZ-VIDEOS/admin/comentarios/listar.php"
 class="<?php echo menuActivo('/admin/comentarios/'); ?>"

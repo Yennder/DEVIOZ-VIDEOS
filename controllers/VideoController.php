@@ -83,13 +83,14 @@ public function listarPublicos()
 
 }
 
-public function buscarPublicos($texto="", $categoria="", $orden="recientes")
+public function buscarPublicos($texto="", $categoria="", $orden="recientes", $genero="")
 {
 
     return $this->modelo->buscarPublicos(
         $texto,
         $categoria,
-        $orden
+        $orden,
+        $genero
     );
 
 }

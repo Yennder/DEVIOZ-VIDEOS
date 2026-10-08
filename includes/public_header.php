@@ -9,5 +9,6 @@
 <link rel="stylesheet" href="../assets/css/public.css">
 <link rel="stylesheet" href="../assets/css/capitulos.css">
 <link rel="stylesheet" href="../assets/css/navbar_responsive_fix.css?v=4.5.1.2">
+<link rel="stylesheet" href="../assets/css/generos.css?v=4.5.2">
 </head>
 <body>

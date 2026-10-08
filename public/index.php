@@ -8,9 +8,12 @@ $interaccionController = new InteraccionController();
 
 $buscar = trim((string)($_GET['buscar'] ?? ''));
 $categoria = isset($_GET['categoria']) && ctype_digit((string)$_GET['categoria']) ? (string)$_GET['categoria'] : '';
+$genero = isset($_GET['genero']) && ctype_digit((string)$_GET['genero']) && (int)$_GET['genero'] > 0 ? (string)$_GET['genero'] : '';
 $orden = in_array($_GET['orden'] ?? '', ['recientes','popular','antiguos','titulo'], true) ? $_GET['orden'] : 'recientes';
 
-$videos = $videoController->buscarPublicos($buscar, $categoria, $orden);
+$videos = $videoController->buscarPublicos($buscar, $categoria, $orden, $genero);
+require_once '../models/Genero.php';
+$generosPublicos = (new Genero())->listar(true);
 $categorias = $videoController->listarCategorias();
 $populares = $interaccionController->videosPopulares(8);
 $recomendados = usuarioAutenticado()
@@ -25,7 +28,7 @@ if(usuarioAutenticado()) {
     $continuarViendo = $interaccionController->continuarViendoUsuario($idUsuarioInicio, 8);
 }
 
-$modoBusqueda = $buscar !== '' || $categoria !== '';
+$modoBusqueda = $buscar !== '' || $categoria !== '' || $genero !== '';
 $hero = $populares[0] ?? ($videos[0] ?? null);
 
 // HOTFIX V4.5.1.1: el administrador gestiona el MP4 desde Configuracion.
@@ -71,10 +74,22 @@ $portadaVideoSrc = deviozFuenteVideoPortada($configuracionPortada->obtener('vide
     <?php if(!empty($categorias)): ?>
     <div class="category-strip" aria-label="Categorías">
         <?php foreach(array_slice($categorias, 0, 10) as $cat): ?>
-            <a href="index.php?categoria=<?php echo (int)$cat['id_categoria']; ?>"><?php echo htmlspecialchars($cat['nombre']); ?></a>
+            <a href="<?php echo $cat['nombre'] === 'Serie' ? 'series.php' : 'index.php?categoria=' . (int)$cat['id_categoria']; ?>"><?php echo htmlspecialchars($cat['nombre']); ?></a>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
+    <?php endif; ?>
+
+    <?php
+      $esEducacional = false;
+      foreach ($categorias as $categoriaFila) {
+          if ($categoriaFila['nombre'] === 'Educacional' && $categoria === (string)$categoriaFila['id_categoria']) $esEducacional = true;
+      }
+    ?>
+    <?php if ($esEducacional): ?>
+    <div class="genre-courses-cta"><div><strong>🎓 Cursos de TechFlix Learning Lab</strong><p>Además de estos videos, puedes explorar los cursos y capacitaciones disponibles.</p></div>
+      <a class="btn-primary-modern" href="<?php echo usuarioAutenticado() ? 'aprendizaje.php' : '../views/login.php'; ?>">Explorar cursos →</a>
+    </div>
     <?php endif; ?>
 
     <section class="content-section" id="contenido">
@@ -87,6 +102,16 @@ $portadaVideoSrc = deviozFuenteVideoPortada($configuracionPortada->obtener('vide
             <form class="sort-form" method="GET">
                 <?php if($buscar !== ''): ?><input type="hidden" name="buscar" value="<?php echo htmlspecialchars($buscar); ?>"><?php endif; ?>
                 <?php if($categoria !== ''): ?><input type="hidden" name="categoria" value="<?php echo htmlspecialchars($categoria); ?>"><?php endif; ?>
+                <?php if (!empty($generosPublicos)): ?>
+                <label class="genre-filter-select" for="genero">Género
+                  <select id="genero" name="genero" onchange="this.form.submit()">
+                    <option value="">Todos los géneros</option>
+                    <?php foreach($generosPublicos as $gen): ?>
+                    <option value="<?php echo (int)$gen['id_genero']; ?>" <?php echo $genero === (string)$gen['id_genero'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($gen['nombre'], ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </label>
+                <?php endif; ?>
                 <label for="orden">Ordenar</label>
                 <select id="orden" name="orden" onchange="this.form.submit()">
                     <option value="recientes" <?php echo $orden === 'recientes' ? 'selected' : ''; ?>>Más recientes</option>

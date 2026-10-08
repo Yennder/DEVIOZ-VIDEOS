@@ -1,0 +1,34 @@
+/* DEVIOZ VIDEOS V4.5.2: clasificación editorial, sin afectar el reproductor. */
+.genre-video-fieldset{border:1px solid var(--adm-border,var(--border,#344650));border-radius:12px;padding:15px;margin-top:18px;min-width:0}
+.genre-video-fieldset legend{font-weight:750;padding:0 7px}
+.genre-video-fieldset p{font-size:13px;opacity:.78;line-height:1.5;margin:6px 0 12px}
+.genre-video-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.genre-video-option{display:flex!important;align-items:center;gap:9px;border:1px solid var(--adm-border,var(--border,#344650));border-radius:9px;padding:9px 11px;cursor:pointer;font-size:13px}
+.genre-video-option input{width:auto!important;margin:0;flex-shrink:0;accent-color:#15c4d9}
+.genre-video-option span{line-height:1.3}
+.genre-manager-grid{display:grid;grid-template-columns:minmax(245px,350px) minmax(0,1fr);gap:20px;align-items:start;margin-top:20px}
+.genre-manager-form{display:flex;flex-direction:column;gap:11px}
+.genre-manager-form h2,.genre-manager-table-wrap h2{font-size:18px;margin:0 0 14px}
+.genre-manager-form label{font-weight:600;font-size:13px}
+.genre-manager-form input,.genre-manager-form textarea{width:100%;min-width:0}
+.genre-manager-table-wrap{min-width:0;overflow-x:auto;border:1px solid var(--adm-border,#344650);border-radius:12px;padding:18px}
+.genre-manager-table{width:100%;border-collapse:collapse;font-size:13px}
+.genre-manager-table th,.genre-manager-table td{text-align:left;padding:10px 7px;border-bottom:1px solid var(--adm-border,#344650);vertical-align:middle}
+.genre-manager-table th{font-weight:700}
+.genre-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.genre-actions form{display:inline-flex;margin:0}
+.genre-actions button{border:1px solid var(--adm-border,#344650);padding:5px 8px;border-radius:7px;background:transparent;color:inherit;cursor:pointer}
+.genre-success{padding:10px 14px;border:1px solid #1c9e7d;border-radius:9px;color:#168d72;background:rgba(28,158,125,.08)}
+.genre-muted{font-size:12px;opacity:.7;line-height:1.5}
+.genre-sidebar-nav{border:0;color:var(--text-soft);font-size:12px}
+.genre-sidebar-nav summary{cursor:pointer;text-transform:uppercase;letter-spacing:.1em;font-size:10px;font-weight:800;margin:6px 11px 10px;color:var(--text-soft)}
+.genre-sidebar-nav summary:focus-visible{outline:2px solid var(--accent)}
+.genre-sidebar-list{display:grid;gap:3px;max-height:310px;overflow:auto;padding-right:3px}
+.genre-sidebar-list a{white-space:normal;font-size:12px!important;line-height:1.45}
+.genre-sidebar-list a span{flex-shrink:0}
+.genre-filter-select{display:flex;align-items:center;gap:7px;min-width:175px}
+.genre-filter-select select{min-width:160px;max-width:235px}
+.genre-courses-cta{padding:14px 18px;border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:18px;display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.genre-courses-cta p{margin:2px 0;font-size:13px;color:var(--text-soft)}
+@media(max-width:980px){.genre-manager-grid{grid-template-columns:1fr}.genre-manager-table-wrap{padding:12px}}
+@media(max-width:640px){.genre-video-grid{grid-template-columns:1fr}.sort-form{flex-wrap:wrap}.genre-filter-select{width:100%}.genre-filter-select select{max-width:none;flex:1}}
