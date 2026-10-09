@@ -20,7 +20,9 @@ class Busqueda
         $prefix = $q . '%';
         $sql = "
             SELECT v.id_video,v.titulo,v.descripcion,v.miniatura,v.vistas,v.fecha_publicacion,
-                   c.nombre AS categoria,s.titulo AS serie
+                   c.nombre AS categoria,s.titulo AS serie,
+                   (SELECT COALESCE(ROUND(AVG(vr.estrellas), 1), 0) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_promedio,
+                   (SELECT COUNT(*) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_total
             FROM videos v
             INNER JOIN categorias c ON c.id_categoria=v.id_categoria
             LEFT JOIN series s ON s.id_serie=v.id_serie

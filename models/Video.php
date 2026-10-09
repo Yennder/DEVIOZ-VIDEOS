@@ -55,7 +55,9 @@ public function buscarPublicos($texto = "", $categoria = "", $orden = "recientes
         SELECT
             videos.*,
             categorias.nombre AS categoria,
-            (SELECT COUNT(*) FROM likes WHERE likes.id_video = videos.id_video) AS likes
+            (SELECT COUNT(*) FROM likes WHERE likes.id_video = videos.id_video) AS likes,
+            (SELECT COALESCE(ROUND(AVG(vr.estrellas), 1), 0) FROM video_valoraciones vr WHERE vr.id_video = videos.id_video) AS valoracion_promedio,
+            (SELECT COUNT(*) FROM video_valoraciones vr WHERE vr.id_video = videos.id_video) AS valoracion_total
         FROM videos
         INNER JOIN categorias ON videos.id_categoria = categorias.id_categoria
         WHERE videos.estado = 'publicado'

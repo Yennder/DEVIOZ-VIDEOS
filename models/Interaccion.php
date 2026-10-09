@@ -229,7 +229,9 @@ class Interaccion
                 v.*,
                 c.nombre AS categoria,
                 (SELECT COUNT(*) FROM likes l WHERE l.id_video = v.id_video) AS likes,
-                (SELECT COUNT(*) FROM favoritos f WHERE f.id_video = v.id_video) AS favoritos
+                (SELECT COUNT(*) FROM favoritos f WHERE f.id_video = v.id_video) AS favoritos,
+                (SELECT COALESCE(ROUND(AVG(vr.estrellas), 1), 0) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_promedio,
+                (SELECT COUNT(*) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_total
             FROM videos v
             INNER JOIN categorias c ON c.id_categoria = v.id_categoria
         ";
@@ -260,7 +262,9 @@ class Interaccion
                 COALESCE(vp.porcentaje, 0) AS porcentaje,
                 COALESCE(vp.posicion_segundos, 0) AS posicion_segundos,
                 (SELECT COUNT(*) FROM likes l WHERE l.id_video = v.id_video) AS likes,
-                (SELECT COUNT(*) FROM favoritos f WHERE f.id_video = v.id_video) AS favoritos
+                (SELECT COUNT(*) FROM favoritos f WHERE f.id_video = v.id_video) AS favoritos,
+                (SELECT COALESCE(ROUND(AVG(vr.estrellas), 1), 0) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_promedio,
+                (SELECT COUNT(*) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_total
             FROM historial h
             INNER JOIN videos v ON v.id_video = h.id_video
             INNER JOIN categorias c ON c.id_categoria = v.id_categoria
@@ -287,7 +291,9 @@ class Interaccion
                 COALESCE(vp.porcentaje, 0) AS porcentaje,
                 COALESCE(vp.posicion_segundos, 0) AS posicion_segundos,
                 (SELECT COUNT(*) FROM likes l WHERE l.id_video = v.id_video) AS likes,
-                (SELECT COUNT(*) FROM favoritos f WHERE f.id_video = v.id_video) AS favoritos
+                (SELECT COUNT(*) FROM favoritos f WHERE f.id_video = v.id_video) AS favoritos,
+                (SELECT COALESCE(ROUND(AVG(vr.estrellas), 1), 0) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_promedio,
+                (SELECT COUNT(*) FROM video_valoraciones vr WHERE vr.id_video = v.id_video) AS valoracion_total
             FROM video_progreso vp
             INNER JOIN videos v ON v.id_video = vp.id_video
             INNER JOIN categorias c ON c.id_categoria = v.id_categoria

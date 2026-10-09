@@ -6,6 +6,8 @@ $miniaturaCard = basename((string)($cardVideo['miniatura'] ?? ''));
 $miniaturaPath = $miniaturaCard !== '' ? (__DIR__ . '/../uploads/thumbnails/' . $miniaturaCard) : '';
 $tieneMiniatura = $miniaturaPath !== '' && is_file($miniaturaPath);
 $porcentajeCard = isset($cardVideo['porcentaje']) ? max(0, min(100, (float)$cardVideo['porcentaje'])) : null;
+$promedioCard = (float)($cardVideo['valoracion_promedio'] ?? 0);
+$totalCard = (int)($cardVideo['valoracion_total'] ?? 0);
 ?>
 <article class="card-video card-video-clickable" data-card-url="detalle.php?id=<?php echo $idCard; ?>" tabindex="0">
     <a class="thumbnail" href="detalle.php?id=<?php echo $idCard; ?>" aria-label="Ver <?php echo htmlspecialchars($tituloCard); ?>">
@@ -30,6 +32,11 @@ $porcentajeCard = isset($cardVideo['porcentaje']) ? max(0, min(100, (float)$card
         <h3><a href="detalle.php?id=<?php echo $idCard; ?>"><?php echo htmlspecialchars($tituloCard); ?></a></h3>
         <div class="video-card-meta">
             <span>♡ <?php echo number_format((int)($cardVideo['likes'] ?? 0)); ?></span>
+            <?php if($totalCard > 0): ?>
+                <span class="card-rating" title="<?php echo $totalCard; ?> valoraciones" aria-label="Promedio de <?php echo number_format($promedioCard, 1, ',', '.'); ?> estrellas de 5, <?php echo $totalCard; ?> valoraciones">★ <?php echo number_format($promedioCard, 1, ',', '.'); ?> (<?php echo $totalCard; ?>)</span>
+            <?php else: ?>
+                <span class="card-rating is-empty" title="Aún no hay valoraciones">☆ Sin votos</span>
+            <?php endif; ?>
             <?php if(!empty($cardVideo['fecha_publicacion'])): ?>
                 <span><?php echo htmlspecialchars(date('d/m/Y', strtotime($cardVideo['fecha_publicacion']))); ?></span>
             <?php endif; ?>

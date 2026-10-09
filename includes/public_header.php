@@ -11,5 +11,6 @@
 <link rel="stylesheet" href="../assets/css/navbar_responsive_fix.css?v=4.5.1.2">
 <link rel="stylesheet" href="../assets/css/generos.css?v=4.5.2">
 <link rel="stylesheet" href="../assets/css/generos_hotfix.css?v=4.5.2.1">
+<link rel="stylesheet" href="../assets/css/valoraciones.css?v=4.5.3">
 </head>
 <body>

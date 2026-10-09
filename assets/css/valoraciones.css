@@ -1,0 +1,41 @@
+/* DEVIOZ VIDEOS V4.5.3 - Calificacion con estrellas, separada de los likes. */
+.video-rating-panel {
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    gap:16px; padding:17px 20px; margin:16px 0 18px;
+    border:1px solid var(--border); border-radius:16px;
+    background:var(--surface); color:var(--text);
+}
+.video-rating-overview {display:flex;flex-wrap:wrap;align-items:center;gap:13px;min-width:0}
+.video-rating-score {display:flex;align-items:baseline;gap:6px}
+.video-rating-score strong {font-size:30px;line-height:1;font-weight:850;color:var(--text)}
+.video-rating-score small {color:var(--text-soft);font-size:12px}
+.video-rating-symbol {font-size:25px;color:#e2a125;line-height:1}
+.video-rating-caption {display:flex;flex-direction:column;gap:4px}
+.video-rating-caption strong {font-size:13px}
+.video-rating-caption small {color:var(--text-soft);font-size:11px}
+.video-rating-interaction {display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.video-rating-interaction > span {font-size:12px;font-weight:700}
+.video-rating-stars {display:flex;gap:5px;align-items:center}
+.video-rating-stars button {
+    width:38px;height:39px;border:1px solid var(--border);border-radius:10px;
+    background:var(--surface-3);color:var(--text-soft);
+    font-size:24px;line-height:1;cursor:pointer;transition:color .16s,border-color .16s,background .16s;
+}
+.video-rating-stars button:hover,.video-rating-stars button:focus-visible {border-color:#e2a125;outline-offset:2px}
+.video-rating-stars button.is-selected {color:#efb32e;background:color-mix(in srgb,#efb32e 12%,var(--surface));border-color:color-mix(in srgb,#efb32e 48%,var(--border))}
+.video-rating-stars button:disabled {opacity:.55;cursor:wait}
+.video-rating-user-status {margin:0;min-height:14px;color:var(--text-soft);font-size:11px}
+.video-rating-guest-link {color:var(--accent-strong);font-size:12px;font-weight:700;text-decoration:none}
+.video-rating-guest-link:hover {text-decoration:underline}
+.video-rating-feedback {flex-basis:100%;margin:0;font-size:12px;color:var(--accent-strong)}
+.video-rating-feedback.is-error {color:#ef6565}
+.video-rating-feedback[hidden] {display:none!important}
+.video-card-meta .card-rating {color:#e4ae42;font-weight:750}
+@media(max-width:640px) {
+    .video-rating-panel {padding:14px;gap:14px;align-items:stretch}
+    .video-rating-overview,.video-rating-interaction {width:100%}
+    .video-rating-interaction {border-top:1px solid var(--border);padding-top:12px}
+    .video-rating-stars button {width:42px;height:42px}
+}
+
+.video-card-meta .card-rating.is-empty {color:var(--text-soft);font-weight:500}

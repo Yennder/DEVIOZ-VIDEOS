@@ -8,6 +8,7 @@ require_once "../controllers/TranscripcionController.php";
 require_once "../includes/video_security.php";
 require_once "../controllers/DescargaController.php";
 require_once "../controllers/CapituloIAController.php";
+require_once "../controllers/ValoracionController.php";
 
 $videoController = new VideoController();
 $temporadaController = new TemporadaController();
@@ -216,6 +217,9 @@ if(!$esVistaLearning)
 $estadoInteraccion = $interaccionController->estadoVideo(
     usuarioAutenticado() ? (int)$_SESSION["id_usuario"] : 0,
     $id
+);
+$valoracionActual = (new ValoracionController())->resumenVideo(
+    (int)$id, usuarioAutenticado() ? (int)$_SESSION["id_usuario"] : 0
 );
 $progresoVideo = ["posicion_segundos" => 0, "duracion_segundos" => 0, "porcentaje" => 0];
 $playlistsUsuario = [];
@@ -826,6 +830,8 @@ href="detalle.php?id=<?php echo (int)$siguiente["id_video"]; ?>"
 
 
 </div>
+
+<?php include "../includes/video_rating.php"; ?>
 
 <div class="video-actions-modern">
     <?php if(usuarioAutenticado()): ?>
@@ -1644,4 +1650,5 @@ $deviozAiCourseTitle = $learningContext ? (string)($learningContext["curso"] ?? 
 $deviozAiCourseContextAvailable = $deviozAiCourseId > 0;
 ?>
 <script src="../assets/js/capitulos.js"></script>
+<script src="../assets/js/valoraciones.js?v=4.5.3" defer></script>
 <?php include "../includes/public_footer.php"; ?>
