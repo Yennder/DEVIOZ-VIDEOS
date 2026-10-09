@@ -24,7 +24,7 @@ $nivelManualTexto = ['basico'=>'Básico','intermedio'=>'Intermedio','avanzado'=>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Reporte de Skills - Learning Lab</title>
-<link rel="stylesheet" href="../../../assets/css/admin.css">
+<link rel="stylesheet" href="../../../assets/css/admin.css"><link rel="stylesheet" href="../../../assets/css/skill_mapa.css?v=5.1">
 </head>
 <body>
 <?php include '../../includes/sidebar.php'; ?>
@@ -37,7 +37,7 @@ $nivelManualTexto = ['basico'=>'Básico','intermedio'=>'Intermedio','avanzado'=>
             <h1>Reporte de Skills</h1>
             <p class="dashboard-subtitle">Compara el desarrollo calculado por TechFlix con la validación realizada por un supervisor.</p>
         </div>
-        <a class="btn-secundario" href="listar.php">Catálogo de Skills</a>
+        <div class="v51-links"><a class="btn-secundario" href="mapa.php">🗺️ Mapa de Skills</a><a class="btn-secundario" href="listar.php">Catálogo de Skills</a></div>
     </div>
 
     <div class="skill-report-summary">

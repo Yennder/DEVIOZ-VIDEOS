@@ -13,10 +13,10 @@ $skills = $perfil['skills'];
 $resumen = $perfil['resumen'];
 ?>
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Skills de <?php echo learningH($usuario['nombre']); ?></title><link rel="stylesheet" href="../../../assets/css/admin.css"></head><body>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Skills de <?php echo learningH($usuario['nombre']); ?></title><link rel="stylesheet" href="../../../assets/css/admin.css"><link rel="stylesheet" href="../../../assets/css/skill_mapa.css?v=5.1"></head><body>
 <?php include '../../includes/sidebar.php'; ?><div class="admin-main"><?php include '../../includes/navbar.php'; ?>
 <section class="admin-content learning-admin-page skill-worker-page">
-<div class="gestion-header"><div><span class="learning-admin-kicker">Perfil de competencias</span><h1><?php echo learningH($usuario['nombre']); ?></h1><p class="dashboard-subtitle"><?php echo learningH($usuario['email']); ?> · evidencia generada a partir de cursos, progreso y evaluaciones.</p></div><a class="btn-secundario" href="reporte.php">Volver al reporte</a></div>
+<div class="gestion-header"><div><span class="learning-admin-kicker">Perfil de competencias</span><h1><?php echo learningH($usuario['nombre']); ?></h1><p class="dashboard-subtitle"><?php echo learningH($usuario['email']); ?> · evidencia generada a partir de cursos, progreso y evaluaciones.</p></div><div class="v51-links"><a class="btn-secundario" href="objetivos.php?id_usuario=<?php echo $idUsuario; ?>">🎯 Configurar objetivos</a><a class="btn-secundario" href="mapa.php">🗺️ Mapa del equipo</a><a class="btn-secundario" href="reporte.php">Volver al reporte</a></div></div>
 
 <div class="skill-report-summary skill-worker-summary">
 <article><span>Skills detectadas</span><strong><?php echo (int)$resumen['total_skills']; ?></strong><small>Competencias relacionadas con sus cursos.</small></article>

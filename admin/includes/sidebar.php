@@ -219,6 +219,10 @@ class="<?php echo (strpos($rutaActual, '/admin/learning/skills/') !== false && !
 🧩 Skills
 </a>
 
+<a href="/DEVIOZ-VIDEOS/admin/learning/skills/mapa.php" class="<?php echo preg_match('#/admin/learning/skills/(mapa|objetivos)\.php#', $rutaActual) ? 'activo-menu' : ''; ?>">
+🗺️ Mapa de Skills
+</a>
+
 <a
 href="/DEVIOZ-VIDEOS/admin/learning/skills/reporte.php"
 class="<?php echo preg_match('#/admin/learning/skills/(reporte|trabajador|evaluar)\.php#', $rutaActual) ? 'activo-menu' : ''; ?>"

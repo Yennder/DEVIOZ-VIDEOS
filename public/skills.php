@@ -4,6 +4,8 @@ verificarSesion();
 require_once '../controllers/SkillController.php';
 require_once '../controllers/VideoController.php';
 require_once '../includes/learning_helpers.php';
+require_once '../includes/skill_mapa_i18n.php';
+require_once '../models/SkillMapa.php';
 
 $skillController = new SkillController();
 $videoController = new VideoController();
@@ -12,6 +14,7 @@ $idUsuario = (int)$_SESSION['id_usuario'];
 $perfil = $skillController->perfilUsuario($idUsuario);
 $skills = $perfil['skills'] ?? [];
 $resumen = $perfil['resumen'] ?? [];
+$mapaPersonal = (new SkillMapa())->mapaUsuario($idUsuario);
 ?>
 <?php include '../includes/public_header.php'; ?>
 <?php include '../includes/public_navbar.php'; ?>
@@ -24,7 +27,7 @@ $resumen = $perfil['resumen'] ?? [];
             <h1>Mi perfil tecnológico</h1>
             <p>Visualiza las competencias que estás desarrollando a partir de tus cursos, progreso y evaluaciones.</p>
             <div class="learning-hero-actions">
-                <a class="btn-primary-modern" href="#mis-skills">Ver mis skills</a>
+                <a class="btn-primary-modern" href="#mapa-skills"><?php echo mapaH('Comparar metas y evidencia'); ?></a>
                 <a class="btn-secondary-modern" href="aprendizaje.php">Mi aprendizaje</a>
             </div>
         </div>
@@ -41,6 +44,8 @@ $resumen = $perfil['resumen'] ?? [];
         <article><span>📚</span><strong><?php echo (int)($resumen['cursos_con_skills'] ?? 0); ?></strong><small>Cursos con competencias</small></article>
         <article><span>⭐</span><strong class="skill-summary-name"><?php echo learningH($resumen['destacada_nombre'] ?: 'Aún sin datos'); ?></strong><small><?php echo !empty($resumen['destacada_nombre']) ? (float)$resumen['destacada_porcentaje'].'% destacada' : 'Completa una formación'; ?></small></article>
     </div>
+
+    <?php include '../includes/skill_mapa_publico.php'; ?>
 
     <section class="content-section" id="mis-skills">
         <div class="section-heading-row">
