@@ -141,6 +141,22 @@ catch(Throwable $e)
     error_log("TECHFLIX V4.4.3 - No se pudieron cargar capitulos inteligentes: " . $e->getMessage());
 }
 
+// V4.4.4 - Estudio voluntario por escenas, separado del avance académico.
+$escenasEstado = [];
+$escenasEstudioDisponible = false;
+if (!empty($capitulosInteligentes) && usuarioAutenticado()) {
+    try {
+        require_once __DIR__ . '/../models/EscenaAprendizaje.php';
+        $escenasModelo = new EscenaAprendizaje();
+        $escenasEstudioDisponible = $escenasModelo->instalado();
+        if ($escenasEstudioDisponible) {
+            $escenasEstado = $escenasModelo->estadoVideo((int)$_SESSION['id_usuario'], (int)$id);
+        }
+    } catch (Throwable $e) {
+        error_log('DEVIOZ V4.4.4 - No se pudo cargar el avance por escenas: ' . $e->getMessage());
+    }
+}
+
 // CONTEXTO DE LEARNING LAB (no altera la reproducción normal)
 $learningAsignacion = filter_input(INPUT_GET, "learning_asignacion", FILTER_VALIDATE_INT);
 $learningContext = null;
@@ -1001,6 +1017,51 @@ Descripción
         </div>
     </div>
 
+    <div class="scene-study" data-scene-study
+         data-study-video="<?php echo (int)$id; ?>"
+         data-study-authenticated="<?php echo usuarioAutenticado() ? '1' : '0'; ?>"
+         data-study-ready="<?php echo $escenasEstudioDisponible ? '1' : '0'; ?>"
+         data-study-csrf="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>">
+        <div class="scene-study-intro">
+            <div>
+                <span class="section-kicker">DEVIOZ LEARNING · V4.4.4</span>
+                <h3>Aprender por escenas</h3>
+                <p>Estudia un fragmento a la vez, escribe una reflexión y conserva tus escenas repasadas. Esta actividad no modifica tus notas ni el progreso de Learning Lab.</p>
+                <div class="scene-study-progress-row" aria-live="polite">
+                    <strong data-scene-study-total>0 / <?php echo count($capitulosInteligentes); ?> repasadas</strong>
+                    <span class="scene-study-progress-bar"><i data-scene-study-progress></i></span>
+                </div>
+            </div>
+            <button type="button" class="scene-study-primary" data-scene-study-open aria-expanded="false" aria-controls="sceneStudyPanel">Estudiar por escenas</button>
+        </div>
+        <div class="scene-study-panel" id="sceneStudyPanel" data-scene-study-panel hidden>
+            <div class="scene-study-panel-top">
+                <span class="scene-study-counter" data-scene-study-counter>Escena 1</span>
+                <button type="button" class="scene-study-close" data-scene-study-close aria-label="Cerrar modo de estudio">✕</button>
+            </div>
+            <h3 data-scene-study-title data-i18n-ignore></h3>
+            <p class="scene-study-recap" data-scene-study-summary data-i18n-ignore></p>
+            <div class="scene-study-concepts" data-scene-study-concepts data-i18n-ignore></div>
+            <p class="scene-study-question">💡 ¿Cuál fue la idea más importante de esta escena y cómo la aplicarías?</p>
+            <label class="scene-study-label" for="sceneStudyNote">Tu reflexión sobre esta escena</label>
+            <textarea id="sceneStudyNote" data-scene-study-note rows="3" maxlength="1200" placeholder="Escribe lo que aprendiste, con tus propias palabras..."></textarea>
+            <p class="scene-study-helper">Para marcarla como repasada, escribe al menos 12 caracteres. Esto es una autoevaluación, no una nota.</p>
+            <p class="scene-study-status" data-scene-study-status role="status" aria-live="polite"></p>
+            <div class="scene-study-controls">
+                <button type="button" class="scene-study-secondary" data-scene-study-prev>← Anterior</button>
+                <button type="button" class="scene-study-primary" data-scene-study-play>▶ Reproducir fragmento</button>
+                <button type="button" class="scene-study-secondary" data-scene-study-save>Guardar apunte</button>
+                <button type="button" class="scene-study-primary" data-scene-study-complete>✓ Marcar como repasada</button>
+                <button type="button" class="scene-study-secondary" data-scene-study-next>Siguiente →</button>
+            </div>
+            <?php if(!usuarioAutenticado()): ?>
+                <p class="scene-study-login">Puedes explorar las escenas, pero para guardar tus reflexiones necesitas <a href="../views/login.php">iniciar sesión</a>.</p>
+            <?php elseif(!$escenasEstudioDisponible): ?>
+                <p class="scene-study-login">El guardado todavía no está disponible. Importa la migración V4.4.4 desde phpMyAdmin.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <div class="smart-chapter-current" data-current-chapter hidden>
         <span>Escena actual</span>
         <strong data-current-chapter-title></strong>
@@ -1028,6 +1089,9 @@ Descripción
             data-chapter-start="<?php echo htmlspecialchars((string)$capInicio); ?>"
             data-chapter-end="<?php echo htmlspecialchars((string)$capFin); ?>"
             data-chapter-title="<?php echo htmlspecialchars((string)$capitulo["titulo"], ENT_QUOTES, "UTF-8"); ?>"
+            data-chapter-id="<?php echo (int)($capitulo['id_capitulo'] ?? 0); ?>"
+            data-chapter-reviewed="<?php echo !empty($escenasEstado[(int)($capitulo['id_capitulo'] ?? 0)]['completada']) ? '1' : '0'; ?>"
+            data-chapter-note="<?php echo htmlspecialchars((string)($escenasEstado[(int)($capitulo['id_capitulo'] ?? 0)]['nota'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
         >
             <div class="smart-chapter-index"><?php echo str_pad((string)($capituloIndex + 1), 2, "0", STR_PAD_LEFT); ?></div>
             <div class="smart-chapter-main">
@@ -1047,6 +1111,8 @@ Descripción
                 <?php endif; ?>
                 <div class="smart-chapter-actions">
                     <button type="button" class="smart-chapter-seek" data-chapter-seek>▶ Ir a esta escena</button>
+                    <button type="button" class="scene-study-select" data-scene-study-select>Estudiar</button>
+                    <span class="scene-study-reviewed" data-chapter-reviewed-badge <?php echo !empty($escenasEstado[(int)($capitulo['id_capitulo'] ?? 0)]['completada']) ? '' : 'hidden'; ?>>✓ Repasada</span>
                     <span class="smart-chapter-progress"><i data-chapter-progress></i></span>
                 </div>
             </div>
@@ -1671,6 +1737,7 @@ $deviozAiCourseTitle = $learningContext ? (string)($learningContext["curso"] ?? 
 $deviozAiCourseContextAvailable = $deviozAiCourseId > 0;
 ?>
 <script src="../assets/js/capitulos.js"></script>
+<script src="../assets/js/escenas_aprendizaje.js?v=4.4.4" defer></script>
 <script src="../assets/js/valoraciones.js?v=4.5.3" defer></script>
 <script src="../assets/js/cuestionario_video.js?v=4.5.4.1" defer></script>
 <?php include "../includes/public_footer.php"; ?>

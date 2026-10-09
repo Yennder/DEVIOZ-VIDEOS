@@ -11,6 +11,7 @@ require_once __DIR__ . '/../config/sesion.php';
 <title>DEVIOZ VIDEOS</title>
 <link rel="stylesheet" href="../assets/css/public.css">
 <link rel="stylesheet" href="../assets/css/capitulos.css">
+<link rel="stylesheet" href="../assets/css/escenas_aprendizaje.css?v=4.4.4">
 <link rel="stylesheet" href="../assets/css/navbar_responsive_fix.css?v=4.5.1.2">
 <link rel="stylesheet" href="../assets/css/generos.css?v=4.5.2">
 <link rel="stylesheet" href="../assets/css/generos_hotfix.css?v=4.5.2.1">
@@ -20,6 +21,7 @@ require_once __DIR__ . '/../config/sesion.php';
 <link rel="stylesheet" href="../assets/css/idiomas.css?v=4.5.6">
 <script>window.DEVIOZ_LANG = <?php echo json_encode(deviozIdiomaActual()); ?>;</script>
 <script src="../assets/js/idiomas_diccionario.js?v=4.5.6" defer></script>
+<script src="../assets/js/escenas_traducciones.js?v=4.4.4" defer></script>
 <script src="../assets/js/idiomas.js?v=4.5.6" defer></script>
 </head>
 <body>

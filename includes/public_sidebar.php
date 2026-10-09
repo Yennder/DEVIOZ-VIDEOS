@@ -46,6 +46,7 @@ if (!isset($generosPublicos)) {
         <a href="favoritos.php" class="<?php echo $paginaActual === 'favoritos.php' ? 'menu-publico-activo' : ''; ?>"><span>♡</span>Favoritos</a>
         <a href="historial.php" class="<?php echo $paginaActual === 'historial.php' ? 'menu-publico-activo' : ''; ?>"><span>◷</span>Historial</a>
         <a href="mis_cuestionarios.php" class="<?php echo $paginaActual === 'mis_cuestionarios.php' ? 'menu-publico-activo' : ''; ?>"><span>📝</span>Mis cuestionarios</a>
+        <a href="mis_escenas.php" class="<?php echo $paginaActual === 'mis_escenas.php' ? 'menu-publico-activo' : ''; ?>"><span>◈</span>Mis escenas</a>
         <a href="playlists.php" class="<?php echo $paginaActual === 'playlists.php' ? 'menu-publico-activo' : ''; ?>"><span>☷</span>Playlists</a>
     </div>
     <?php endif; ?>
