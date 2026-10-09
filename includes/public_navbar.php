@@ -63,6 +63,7 @@ if ($logueado) {
     </div>
 
     <div class="public-navbar-actions">
+        <?php echo deviozSelectorIdioma('public'); ?>
         <div class="theme-control">
             <span class="theme-icon" id="themeIcon" aria-hidden="true">☀️</span>
             <label class="theme-switch" title="Cambiar tema">

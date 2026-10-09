@@ -97,7 +97,7 @@ $categorias = (new VideoController())->listarCategorias();
             <?php if (count($preguntas) !== 5): ?>
                 <div class="vq-alert is-error">Este cuestionario no esta listo. Solicita una revision administrativa.</div>
             <?php else: ?>
-            <form class="vq-public-form" method="POST" action="cuestionario_video.php?id=<?php echo $idVideo; ?>" onsubmit="return confirm('Enviar las cinco respuestas y registrar este intento?');">
+            <form class="vq-public-form" method="POST" action="cuestionario_video.php?id=<?php echo $idVideo; ?>" onsubmit="return confirm(window.deviozTraducir ? window.deviozTraducir('Enviar las cinco respuestas y registrar este intento?') : 'Enviar las cinco respuestas y registrar este intento?');">
                 <?php echo csrfInput(); ?><input type="hidden" name="id" value="<?php echo $idVideo; ?>">
                 <?php foreach ($preguntas as $i => $p): ?>
                     <fieldset class="vq-public-card vq-public-question">

@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../includes/idiomas.php';
+
 if (!function_exists('deviozEsHttps')) {
     function deviozEsHttps(): bool
     {

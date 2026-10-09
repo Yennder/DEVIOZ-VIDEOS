@@ -1,3 +1,8 @@
+<?php require_once __DIR__ . '/../../config/sesion.php'; ?>
+<link rel="stylesheet" href="/DEVIOZ-VIDEOS/assets/css/idiomas.css?v=4.5.6">
+<script>window.DEVIOZ_LANG = <?php echo json_encode(deviozIdiomaActual()); ?>;</script>
+<script src="/DEVIOZ-VIDEOS/assets/js/idiomas_diccionario.js?v=4.5.6" defer></script>
+<script src="/DEVIOZ-VIDEOS/assets/js/idiomas.js?v=4.5.6" defer></script>
 <header class="admin-navbar">
 
 
@@ -10,6 +15,7 @@
 
 
     <div class="admin-actions">
+        <?php echo deviozSelectorIdioma('admin'); ?>
 
 
         <!-- =========================================

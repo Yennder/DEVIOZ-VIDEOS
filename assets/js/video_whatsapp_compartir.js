@@ -5,6 +5,34 @@
 (function () {
     'use strict';
 
+    // V4.5.6: el mensaje que recibirá el contacto usa el idioma elegido,
+    // sin traducir el comentario ni el título que escribió su autor.
+    const idioma = ['es', 'en', 'pt'].includes(window.DEVIOZ_LANG) ? window.DEVIOZ_LANG : 'es';
+    const textosIdioma = {
+        es: {
+            intro: '¡Hola! Te recomiendo un video de *DEVIOZ VIDEOS*.',
+            interes: '*Esto fue lo que más me interesó:*',
+            link: '*Mira el video aquí:*',
+            cierre: '_¡Aprendamos y compartamos conocimiento!_',
+            comentario: '(Aquí aparecerá tu comentario)'
+        },
+        en: {
+            intro: 'Hi! I recommend a video from *DEVIOZ VIDEOS*.',
+            interes: '*What I found most interesting:*',
+            link: '*Watch the video here:*',
+            cierre: '_Let’s learn and share knowledge!_',
+            comentario: '(Your comment will appear here)'
+        },
+        pt: {
+            intro: 'Olá! Recomendo um vídeo do *DEVIOZ VIDEOS*.',
+            interes: '*O que achei mais interessante:*',
+            link: '*Assista ao vídeo aqui:*',
+            cierre: '_Vamos aprender e compartilhar conhecimento!_',
+            comentario: '(Seu comentário aparecerá aqui)'
+        }
+    }[idioma];
+    const t = text => typeof window.deviozTraducir === 'function' ? window.deviozTraducir(text) : text;
+
     const modal = document.getElementById('vqWhatsappDialog');
     if (!modal) return;
 
@@ -31,12 +59,12 @@
 
     if (enlacePublicoConfigurado) {
         enlace.value = enlacePublicoConfigurado;
-        if (enlaceAviso) enlaceAviso.textContent = 'Enlace generado automáticamente para este video desde la configuración del administrador.';
+        if (enlaceAviso) enlaceAviso.textContent = t('Enlace generado automáticamente para este video desde la configuración del administrador.');
     } else if (!esLocal) {
         enlace.value = new URL('detalle.php?id=' + encodeURIComponent(idVideo), ubicacion.href).href;
-        if (enlaceAviso) enlaceAviso.textContent = 'El enlace directo a este video se incluirá en tu mensaje.';
+        if (enlaceAviso) enlaceAviso.textContent = t('El enlace directo a este video se incluirá en tu mensaje.');
     } else if (enlaceAviso) {
-        enlaceAviso.textContent = 'DEVIOZ está en localhost: para incluir un enlace que funcione fuera de tu PC, configura el dominio público en Administración → Configuración o pega aquí un enlace público del video.';
+        enlaceAviso.textContent = t('DEVIOZ está en localhost: para incluir un enlace que funcione fuera de tu PC, configura el dominio público en Administración → Configuración o pega aquí un enlace público del video.');
     }
 
     // Emojis Unicode estandar compatibles con WhatsApp. Usar puntos de codigo
@@ -50,20 +78,20 @@
     };
 
     function mensajeWhatsapp() {
-        const comentarioUsuario = comentario.value.trim() || '(Aquí aparecerá tu comentario)';
+        const comentarioUsuario = comentario.value.trim() || textosIdioma.comentario;
         const nombreVideo = titulo.replace(/\*/g, '').trim();
         const lineas = [
-            simbolos.saludo + ' ¡Hola! Te recomiendo un video de *DEVIOZ VIDEOS*.',
+            simbolos.saludo + ' ' + textosIdioma.intro,
             '',
             simbolos.video + ' *' + nombreVideo + '*',
             '',
-            simbolos.idea + ' *Esto fue lo que más me interesó:*',
+            simbolos.idea + ' ' + textosIdioma.interes,
             comentarioUsuario,
         ];
         if (enlace.value.trim()) {
-            lineas.push('', simbolos.enlace + ' *Mira el video aquí:*', enlace.value.trim());
+            lineas.push('', simbolos.enlace + ' ' + textosIdioma.link, enlace.value.trim());
         }
-        lineas.push('', simbolos.cierre + ' _¡Aprendamos y compartamos conocimiento!_');
+        lineas.push('', simbolos.cierre + ' ' + textosIdioma.cierre);
         return lineas.join('\n');
     }
 
@@ -89,7 +117,7 @@
 
     function mostrarError(texto, campo) {
         errorBox.hidden = false;
-        errorBox.textContent = texto;
+        errorBox.textContent = t(texto);
         if (campo) campo.focus();
     }
 

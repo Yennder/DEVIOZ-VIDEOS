@@ -1,5 +1,8 @@
+<?php
+require_once __DIR__ . '/../config/sesion.php';
+?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?php echo deviozIdiomaActual() === 'pt' ? 'pt-BR' : deviozIdiomaActual(); ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,5 +17,9 @@
 <link rel="stylesheet" href="../assets/css/valoraciones.css?v=4.5.3">
 <link rel="stylesheet" href="../assets/css/cuestionarios.css?v=4.5.4.1">
 <link rel="stylesheet" href="../assets/css/video_whatsapp_compartir.css?v=4.5.5.1">
+<link rel="stylesheet" href="../assets/css/idiomas.css?v=4.5.6">
+<script>window.DEVIOZ_LANG = <?php echo json_encode(deviozIdiomaActual()); ?>;</script>
+<script src="../assets/js/idiomas_diccionario.js?v=4.5.6" defer></script>
+<script src="../assets/js/idiomas.js?v=4.5.6" defer></script>
 </head>
 <body>

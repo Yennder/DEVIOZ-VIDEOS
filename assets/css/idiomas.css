@@ -1,0 +1,18 @@
+/* DEVIOZ V4.5.6: selector ES/EN/PT en todas las interfaces. */
+.devioz-visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.devioz-lang-switch{display:inline-flex!important;align-items:center;justify-content:center;gap:5px;flex:0 0 auto;min-width:0;margin:0!important;padding:3px 5px!important;border:1px solid rgba(125,158,171,.28);border-radius:10px;background:rgba(100,139,155,.08);line-height:1.25;box-sizing:border-box;white-space:nowrap}
+.devioz-lang-icon{display:inline-flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;line-height:1;margin:0!important}
+.devioz-lang-switch select{display:block;max-width:110px;width:78px;min-width:0;margin:0!important;padding:6px 16px 6px 4px!important;line-height:1.35;font:inherit;font-size:11px;line-height:1.35;font-weight:600;color:inherit;background:transparent;border:0;border-radius:5px;cursor:pointer;appearance:auto;box-shadow:none!important}
+.devioz-lang-switch select:focus-visible{outline:2px solid #19c7de;outline-offset:2px}
+.devioz-lang-switch option{color:#15202c;background:#f5f9fa;font-size:12px}
+.devioz-lang-switch noscript button{cursor:pointer}
+.public-navbar-actions>.devioz-lang-switch{color:var(--text,#e8f7fc);max-height:42px}
+.admin-navbar .devioz-lang-switch{color:#eaf8fb;background:rgba(17,43,53,.3);border-color:rgba(153,204,216,.35)}
+.admin-navbar .devioz-lang-switch select{color:#eaf8fb;max-width:105px}
+.devioz-lang-auth{display:flex;justify-content:center;align-items:center;margin:10px auto 4px;max-width:100%}
+.devioz-lang-auth .devioz-lang-switch{color:inherit;background:rgba(116,139,159,.13)}
+.devioz-lang-auth select{width:107px;font-size:12px}
+@media(max-width:1600px){.public-navbar-actions{gap:8px!important}}
+@media(max-width:780px){.admin-navbar .devioz-lang-switch{padding:3px!important}.admin-navbar .devioz-lang-switch select{width:73px;padding-right:6px!important}}
+@media(max-width:700px){.public-navbar .devioz-lang-switch{gap:2px;padding:2px 3px!important}.public-navbar .devioz-lang-icon{font-size:12px}.public-navbar .devioz-lang-switch select{width:54px;max-width:54px;padding:5px 0!important;font-size:10px}.public-navbar-actions>.devioz-lang-switch{max-width:77px}}
+@media(max-width:390px){.public-navbar .devioz-lang-icon{display:none}.public-navbar .devioz-lang-switch select{width:47px;max-width:47px}}
