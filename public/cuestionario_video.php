@@ -31,6 +31,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         $respuestas = $_POST['respuesta'] ?? null;
         if (!is_array($respuestas)) throw new InvalidArgumentException('Responde las cinco preguntas.');
         $resultado = $model->registrarIntento($idVideo, $usuario, $respuestas);
+        // V4.5.5: mostrar la invitacion a compartir solo despues de un intento real.
+        // La sesion guarda una invitacion efimera; no almacena numeros ni mensajes.
+        $_SESSION['devioz_whatsapp_compartir_flash'] = [
+            'id_intento' => (int)$resultado['id_intento'],
+            'id_video' => $idVideo,
+            'id_usuario' => $usuario,
+            'creado' => time(),
+        ];
         header('Location: cuestionario_video.php?id=' . $idVideo . '&intento=' . (int)$resultado['id_intento']);
         exit;
     } catch (InvalidArgumentException $e) {
@@ -39,6 +47,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         error_log('DEVIOZ V4.5.4 - Respuesta cuestionario: ' . $e->getMessage());
         $error = 'No fue posible registrar tu intento. Vuelve a intentarlo.';
     }
+}
+// El flash se consume una sola vez tras la redireccion de una evaluacion.
+$abrirCompartirWhatsApp = false;
+$invitacionWhatsApp = $_SESSION['devioz_whatsapp_compartir_flash'] ?? null;
+if (is_array($invitacionWhatsApp)) {
+    unset($_SESSION['devioz_whatsapp_compartir_flash']);
+    $abrirCompartirWhatsApp = $intento !== null
+        && (int)($invitacionWhatsApp['id_usuario'] ?? 0) === $usuario
+        && (int)($invitacionWhatsApp['id_video'] ?? 0) === $idVideo
+        && (int)($invitacionWhatsApp['id_intento'] ?? 0) === (int)$intento['id_intento']
+        && (int)($invitacionWhatsApp['creado'] ?? 0) >= time() - 600;
 }
 $preguntas = $version && !$intento ? $model->preguntas((int)$version['id_cuestionario'], false) : [];
 $resumen = $version ? $model->resumenUsuario($idVideo, $usuario) : ['intentos' => 0, 'mejor_puntaje' => 0];
@@ -70,8 +89,9 @@ $categorias = (new VideoController())->listarCategorias();
                 <h2><?php echo (int)$intento['aciertos'] === 5 ? 'Excelente resultado' : 'Sigue aprendiendo'; ?></h2>
                 <p>Acertaste <strong><?php echo (int)$intento['aciertos']; ?> de 5 preguntas</strong>. Puedes repasar el video y realizar otro intento para mejorar tu puntaje.</p>
                 <p class="vq-result-note">Para que la evaluacion siga siendo util, no mostramos las respuestas correctas despues de cada intento.</p>
-                <div class="vq-result-actions"><a class="vq-primary" href="cuestionario_video.php?id=<?php echo $idVideo; ?>">Intentar de nuevo</a><a class="vq-secondary" href="<?php echo $h($regresar); ?>">Volver al video</a><a class="vq-secondary" href="mis_cuestionarios.php">Ver mis resultados</a></div>
+                <div class="vq-result-actions"><a class="vq-primary" href="cuestionario_video.php?id=<?php echo $idVideo; ?>">Intentar de nuevo</a><a class="vq-secondary" href="<?php echo $h($regresar); ?>">Volver al video</a><a class="vq-secondary" href="mis_cuestionarios.php">Ver mis resultados</a><button class="vq-secondary" type="button" id="vqWhatsappAbrir">Compartir por WhatsApp ↗</button></div>
             </section>
+            <?php include __DIR__ . '/../includes/video_whatsapp_compartir.php'; ?>
         <?php else: ?>
             <?php if ($error): ?><div class="vq-alert is-error" role="alert"><?php echo $h($error); ?></div><?php endif; ?>
             <?php if (count($preguntas) !== 5): ?>
@@ -95,4 +115,5 @@ $categorias = (new VideoController())->listarCategorias();
         <?php endif; ?>
     <?php endif; ?>
 </main></div>
+<script src="../assets/js/video_whatsapp_compartir.js?v=4.5.5" defer></script>
 <?php include __DIR__ . '/../includes/public_footer.php'; ?>
