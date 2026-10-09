@@ -21,7 +21,7 @@ if (!isset($generosPublicos)) {
         <?php
         $learningAbierto = in_array($paginaActual, [
             'aprendizaje.php', 'curso.php', 'evaluacion.php', 'progreso.php',
-            'skills.php', 'logros.php', 'certificados.php', 'notificaciones.php',
+            'skills.php', 'logros.php', 'certificados.php', 'retos.php', 'reto.php', 'notificaciones.php',
             'solicitudes_descarga.php', 'solicitud_descarga.php'
         ], true);
         ?>
@@ -34,6 +34,7 @@ if (!isset($generosPublicos)) {
                 <a href="aprendizaje.php" class="<?php echo in_array($paginaActual, ['aprendizaje.php','curso.php','evaluacion.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mi aprendizaje</a>
                 <a href="progreso.php" class="<?php echo $paginaActual === 'progreso.php' ? 'menu-publico-activo' : ''; ?>"><span>↗</span>Mi progreso</a>
                 <a href="skills.php" class="<?php echo $paginaActual === 'skills.php' ? 'menu-publico-activo' : ''; ?>"><span>🧩</span>Mis skills</a>
+                <a href="retos.php" class="<?php echo in_array($paginaActual, ['retos.php','reto.php'], true) ? 'menu-publico-activo' : ''; ?>"><span>🛠️</span><?php require_once __DIR__ . "/watchbuild_i18n.php"; echo wbH("Mis retos"); ?></a>
                 <a href="logros.php" class="<?php echo $paginaActual === 'logros.php' ? 'menu-publico-activo' : ''; ?>"><span>🏅</span>Mis logros</a>
                 <a href="certificados.php" class="<?php echo $paginaActual === 'certificados.php' ? 'menu-publico-activo' : ''; ?>"><span>🎓</span>Mis certificados</a>
                 <a href="notificaciones.php" class="<?php echo $paginaActual === 'notificaciones.php' ? 'menu-publico-activo' : ''; ?>"><span>🔔</span>Notificaciones</a>

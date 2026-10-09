@@ -984,6 +984,8 @@ Descripción
 
 </div>
 
+<?php $wbVideoId = (int)$id; include __DIR__ . "/../includes/watchbuild_relacionados.php"; ?>
+
 <?php if(usuarioAutenticado()): ?>
 <section class="ai-summary-card" data-ai-summary data-summary-type="video" data-summary-id="<?php echo (int)$id; ?>" data-summary-csrf="<?php echo htmlspecialchars(csrfToken(), ENT_QUOTES, 'UTF-8'); ?>" data-summary-can-refresh="<?php echo esAdmin() ? '1' : '0'; ?>">
     <div class="ai-summary-heading">

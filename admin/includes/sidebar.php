@@ -230,6 +230,9 @@ class="<?php echo preg_match('#/admin/learning/skills/(reporte|trabajador|evalua
 📊 Reporte Skills
 </a>
 
+<a href="/DEVIOZ-VIDEOS/admin/learning/retos/index.php" class="<?php echo str_contains($rutaActual, '/admin/learning/retos/entregas.php') || str_contains($rutaActual, '/admin/learning/retos/revisar.php') ? '' : menuActivo('/admin/learning/retos/'); ?>">🛠️ Watch &amp; Build</a>
+<a href="/DEVIOZ-VIDEOS/admin/learning/retos/entregas.php" class="<?php echo preg_match('#/admin/learning/retos/(entregas|revisar)\.php#', $rutaActual) ? 'activo-menu' : ''; ?>">📥 <?php require_once __DIR__.'/../../includes/watchbuild_i18n.php'; echo wbH('Entregas y revisiones'); ?></a>
+
 <a
 href="/DEVIOZ-VIDEOS/admin/learning/seguimiento.php"
 class="<?php echo menuActivo('/admin/learning/seguimiento.php'); ?>"

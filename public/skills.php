@@ -47,6 +47,27 @@ $mapaPersonal = (new SkillMapa())->mapaUsuario($idUsuario);
 
     <?php include '../includes/skill_mapa_publico.php'; ?>
 
+    <?php
+    $evidenciasPracticas = [];
+    try {
+        require_once __DIR__ . '/../models/WatchBuild.php';
+        $wbModel = new WatchBuild();
+        if ($wbModel->instalado()) $evidenciasPracticas = $wbModel->evidenciasSkills($idUsuario);
+    } catch (Throwable $e) { error_log('WatchBuild skills evidencias: '.$e->getMessage()); }
+    require_once __DIR__.'/../includes/watchbuild_i18n.php';
+    ?>
+        <section class="wb-panel wb-skill-evidence">
+      <span class="wb-eyebrow">WATCH &amp; BUILD · V5.2</span>
+      <h2><?php echo wbH('Evidencias prácticas'); ?></h2>
+      <p><?php echo wbH('Estas evidencias son complementarias; no modifican tus porcentajes académicos ni certificados.'); ?></p>
+      <?php if ($evidenciasPracticas): ?><ul>
+      <?php foreach($evidenciasPracticas as $practica): ?>
+        <li><strong data-i18n-ignore><?php echo wbE($practica['skill_nombre']); ?></strong><p><?php echo (int)$practica['aprobados']; ?> <?php echo wbH('Retos prácticos aprobados'); ?></p></li>
+      <?php endforeach; ?></ul>
+      <?php else: ?><p><?php echo wbH('Aún no hay evidencia práctica aprobada asociada a Skills.'); ?></p><?php endif; ?>
+      <a class="wb-btn wb-btn-outline" href="retos.php"><?php echo wbH('Abrir Watch & Build'); ?> →</a>
+    </section>
+
     <section class="content-section" id="mis-skills">
         <div class="section-heading-row">
             <div>

@@ -13,6 +13,7 @@ require_once __DIR__ . '/../config/sesion.php';
 <link rel="stylesheet" href="../assets/css/capitulos.css">
 <link rel="stylesheet" href="../assets/css/escenas_aprendizaje.css?v=4.4.4">
 <link rel="stylesheet" href="../assets/css/skill_mapa.css?v=5.1">
+<link rel="stylesheet" href="../assets/css/watchbuild.css?v=5.2">
 <link rel="stylesheet" href="../assets/css/navbar_responsive_fix.css?v=4.5.1.2">
 <link rel="stylesheet" href="../assets/css/generos.css?v=4.5.2">
 <link rel="stylesheet" href="../assets/css/generos_hotfix.css?v=4.5.2.1">
