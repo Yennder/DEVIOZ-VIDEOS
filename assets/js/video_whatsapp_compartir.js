@@ -25,30 +25,65 @@
 
     const idVideo = modal.dataset.videoId;
     const titulo = modal.dataset.videoTitulo || 'este video de DEVIOZ VIDEOS';
+    const enlacePublicoConfigurado = modal.dataset.videoEnlacePublico || '';
     const ubicacion = new URL(window.location.href);
     const esLocal = !['http:', 'https:'].includes(ubicacion.protocol) || /^(localhost|127(?:\.\d{1,3}){3}|\[::1\])$/i.test(ubicacion.hostname);
 
-    if (!esLocal) {
+    if (enlacePublicoConfigurado) {
+        enlace.value = enlacePublicoConfigurado;
+        if (enlaceAviso) enlaceAviso.textContent = 'Enlace generado automáticamente para este video desde la configuración del administrador.';
+    } else if (!esLocal) {
         enlace.value = new URL('detalle.php?id=' + encodeURIComponent(idVideo), ubicacion.href).href;
-        if (enlaceAviso) enlaceAviso.textContent = 'Este enlace se incluirá en el mensaje para que puedan abrir el video.';
+        if (enlaceAviso) enlaceAviso.textContent = 'El enlace directo a este video se incluirá en tu mensaje.';
     } else if (enlaceAviso) {
-        enlaceAviso.textContent = 'Estás usando localhost. No incluiremos un enlace local inaccesible para el destinatario; puedes escribir aquí una URL pública cuando la tengas.';
+        enlaceAviso.textContent = 'DEVIOZ está en localhost: para incluir un enlace que funcione fuera de tu PC, configura el dominio público en Administración → Configuración o pega aquí un enlace público del video.';
     }
 
+    // Emojis Unicode estandar compatibles con WhatsApp. Usar puntos de codigo
+    // evita que una respuesta JS con charset incorrecto altere los simbolos.
+    const simbolos = {
+        saludo: String.fromCodePoint(0x1F44B),   // mano saludando
+        video: String.fromCodePoint(0x1F3AC),    // claqueta
+        idea: String.fromCodePoint(0x1F4A1),     // bombilla
+        enlace: String.fromCodePoint(0x1F517),   // eslabon
+        cierre: String.fromCodePoint(0x2728),    // destellos
+    };
+
     function mensajeWhatsapp() {
+        const comentarioUsuario = comentario.value.trim() || '(Aquí aparecerá tu comentario)';
+        const nombreVideo = titulo.replace(/\*/g, '').trim();
         const lineas = [
-            'Hola, quiero compartirte un video de DEVIOZ VIDEOS:',
-            titulo,
+            simbolos.saludo + ' ¡Hola! Te recomiendo un video de *DEVIOZ VIDEOS*.',
             '',
-            'Lo que me pareció interesante:',
-            comentario.value.trim() || '(Escribe aquí tu comentario)',
+            simbolos.video + ' *' + nombreVideo + '*',
+            '',
+            simbolos.idea + ' *Esto fue lo que más me interesó:*',
+            comentarioUsuario,
         ];
-        if (enlace.value.trim()) lineas.push('', 'Ver video: ' + enlace.value.trim());
+        if (enlace.value.trim()) {
+            lineas.push('', simbolos.enlace + ' *Mira el video aquí:*', enlace.value.trim());
+        }
+        lineas.push('', simbolos.cierre + ' _¡Aprendamos y compartamos conocimiento!_');
         return lineas.join('\n');
     }
 
+    // Previsualizacion sin innerHTML: permite negrita y cursiva sin riesgo de inyectar HTML.
     function actualizarPrevia() {
-        vistaPrevia.textContent = mensajeWhatsapp();
+        const mensaje = mensajeWhatsapp();
+        const fragmento = document.createDocumentFragment();
+        mensaje.split(/(\*[^*\n]+\*|_[^_\n]+_)/g).forEach(function (parte) {
+            if (!parte) return;
+            const esNegrita = parte.startsWith('*') && parte.endsWith('*') && parte.length > 2;
+            const esCursiva = parte.startsWith('_') && parte.endsWith('_') && parte.length > 2;
+            if (esNegrita || esCursiva) {
+                const elemento = document.createElement(esNegrita ? 'strong' : 'em');
+                elemento.textContent = parte.slice(1, -1);
+                fragmento.appendChild(elemento);
+            } else {
+                fragmento.appendChild(document.createTextNode(parte));
+            }
+        });
+        vistaPrevia.replaceChildren(fragmento);
         if (!errorBox.hidden) ocultarError();
     }
 
@@ -117,8 +152,11 @@
             try {
                 const parsed = new URL(enlace.value.trim());
                 if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('Protocolo no permitido');
-                if (/^(localhost|127(?:\.\d{1,3}){3}|\[::1\])$/i.test(parsed.hostname)) {
-                    mostrarError('Un enlace localhost no será accesible al destinatario. Bórralo o usa una URL pública.', enlace);
+                const host = parsed.hostname.toLowerCase();
+                const esPrivada = /^(?:localhost|127\.|10\.|0\.|192\.168\.|169\.254\.|172\.(?:1[6-9]|2\d|3[01])\.|\[::1\]$)/i.test(host)
+                    || /\.(?:localhost|local|lan|internal|test|invalid)$/.test(host);
+                if (esPrivada) {
+                    mostrarError('El enlace local o privado no será accesible al destinatario. Usa una URL pública.', enlace);
                     return null;
                 }
                 if (parsed.href.length > 2000) throw new Error('Enlace demasiado largo');
@@ -142,11 +180,14 @@
         }
         if (valores.link) enlace.value = valores.link;
         const mensaje = mensajeWhatsapp();
-        const destino = 'https://wa.me/' + valores.telefono + '?text=' + encodeURIComponent(mensaje);
+        // V4.5.5.2: evitar wa.me, cuya redireccion puede sustituir emojis por U+FFFD.
+        // El endpoint directo preserva la cadena UTF-8 codificada una sola vez.
+        const destino = 'https://api.whatsapp.com/send?phone=' + valores.telefono
+            + '&text=' + encodeURIComponent(mensaje);
         enviar.setAttribute('href', destino);
         if (estado) {
             estado.hidden = false;
-            estado.textContent = 'WhatsApp debería abrirse en otra pestaña. Completa el envío allí: DEVIOZ no puede verificar si enviaste el mensaje.';
+            estado.textContent = 'Se abrirá WhatsApp con el mensaje preparado. Pulsa Enviar dentro de WhatsApp para completar el envío.';
         }
     });
 

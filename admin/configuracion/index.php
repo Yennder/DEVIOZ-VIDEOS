@@ -9,6 +9,7 @@ verificarAdmin();
 
 require_once "../../controllers/ConfiguracionController.php";
 require_once "../../includes/portada_video.php";
+require_once "../../includes/whatsapp_url_publica.php";
 
 
 $controller = new ConfiguracionController();
@@ -331,6 +332,27 @@ if ($postSinDatos) {
     }
 }
 
+// V4.5.5.1: dominio publico opcional para enlaces de videos compartidos.
+if ($esPost && !$postSinDatos && $accionConfiguracion === 'guardar_url_publica') {
+    verificarCsrfPost();
+    $entradaPublica = $_POST['url_publica_sitio'] ?? '';
+    $urlNormalizada = deviozNormalizarUrlPublica($entradaPublica);
+    if ($urlNormalizada === null) {
+        $error = 'Introduce la URL HTTPS publica de tu proyecto, sin /public, sin parametros ni localhost.';
+    } elseif (!$controller->guardar('url_publica_sitio', $urlNormalizada)) {
+        $error = 'No se pudo guardar la URL publica del proyecto.';
+    } else {
+        $mensaje = $urlNormalizada === ''
+            ? 'URL publica desactivada. Se utilizara el dominio actual cuando la plataforma este publicada.'
+            : 'URL publica guardada. Los mensajes incluiran el enlace del video correspondiente.';
+    }
+}
+$urlPublicaGuardada = (string)($controller->obtener('url_publica_sitio') ?? '');
+$urlPublicaCampo = $accionConfiguracion === 'guardar_url_publica' && $error !== ''
+    ? (is_string($_POST['url_publica_sitio'] ?? null) ? $_POST['url_publica_sitio'] : '')
+    : $urlPublicaGuardada;
+$vistaPreviaUrlPublica = deviozUrlPublicaVideo(23, $urlPublicaGuardada);
+
 $videoPortadaGuardado = $controller->obtener('video_portada');
 $videoPortadaSrc = deviozFuenteVideoPortada($videoPortadaGuardado, '../../');
 $videoPortadaNoEncontrado = deviozNombreVideoPortadaValido($videoPortadaGuardado)
@@ -380,6 +402,11 @@ href="../../assets/css/admin.css"
 .portada-admin-boton-quitar:hover{background:rgba(180,80,89,.09)!important;}
 .portada-admin-etiqueta{font-size:13px;line-height:1.6;color:var(--adm-text,#243444);}
 .portada-admin-enlace{color:#0a9db2;text-decoration:underline;text-underline-offset:3px;}
+.url-publica-card{margin-top:24px}
+.url-publica-card .url-publica-ayuda{color:var(--adm-muted,#8b9da9);font-size:13px;line-height:1.65;max-width:820px}
+.url-publica-card input[type=url]{display:block;width:100%;max-width:780px;box-sizing:border-box}
+.url-publica-ejemplo{display:block;overflow-wrap:anywhere;font-size:12px;color:var(--adm-muted,#8b9da9);margin-top:12px}
+.url-publica-ejemplo strong{color:var(--adm-text,#e9f5f8)}
 </style>
 </head>
 
@@ -623,6 +650,28 @@ Guardar Logo
     <button type="submit" class="btn-secundario portada-admin-boton-quitar">Quitar video de portada</button>
 </form>
 <?php endif; ?>
+
+<form method="POST" class="admin-form url-publica-card" aria-label="Configurar enlace publico para compartir videos">
+    <?php echo csrfInput(); ?>
+    <input type="hidden" name="accion" value="guardar_url_publica">
+    <div class="form-section">
+        <h2>Enlace publico de DEVIOZ para WhatsApp</h2>
+        <p class="url-publica-ayuda">Cuando un usuario comparta su experiencia despues de las cinco preguntas,
+           se adjuntara automaticamente el enlace directo al <strong>video que evaluo</strong>.
+           Configura aqui la direccion publica de tu proyecto. En localhost aun no existe un enlace accesible desde otros celulares.</p>
+        <label for="url_publica_sitio">URL base publica del proyecto (HTTPS)</label>
+        <input type="url" id="url_publica_sitio" name="url_publica_sitio" maxlength="500"
+               inputmode="url" placeholder="https://tu-dominio.com/DEVIOZ-VIDEOS"
+               value="<?php echo htmlspecialchars($urlPublicaCampo, ENT_QUOTES, 'UTF-8'); ?>">
+        <span class="url-publica-ejemplo">Escribe la ruta raiz, <strong>sin /public ni detalle.php</strong>. Dejalo vacio para quitar esta configuracion.</span>
+        <?php if ($vistaPreviaUrlPublica !== null): ?>
+            <span class="url-publica-ejemplo">Ejemplo del enlace que se generara: <strong><?php echo htmlspecialchars($vistaPreviaUrlPublica, ENT_QUOTES, 'UTF-8'); ?></strong></span>
+        <?php endif; ?>
+    </div>
+    <div class="form-actions">
+        <button class="btn" type="submit">Guardar enlace publico</button>
+    </div>
+</form>
 
 </section>
 

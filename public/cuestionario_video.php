@@ -115,5 +115,5 @@ $categorias = (new VideoController())->listarCategorias();
         <?php endif; ?>
     <?php endif; ?>
 </main></div>
-<script src="../assets/js/video_whatsapp_compartir.js?v=4.5.5" defer></script>
+<script src="../assets/js/video_whatsapp_compartir.js?v=4.5.5.2" defer></script>
 <?php include __DIR__ . '/../includes/public_footer.php'; ?>

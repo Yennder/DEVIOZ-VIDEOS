@@ -29,3 +29,13 @@
 .vq-wa-acciones .vq-primary:hover{background:#0d805b;border-color:#0d805b}
 .vq-wa-interior>small{display:block;color:var(--text-soft,#a8b9c5);line-height:1.5;font-size:10px}
 @media(max-width:580px){.vq-wa-telefono{grid-template-columns:1fr}.vq-wa-interior{padding:18px}.vq-wa-cabecera{gap:9px}.vq-wa-icono{width:42px;height:42px;font-size:21px}.vq-wa-dialog{max-height:calc(100dvh - 16px);width:calc(100vw - 16px)}}
+
+/* HOTFIX V4.5.5.1 - Vista previa legible, similar a una burbuja de WhatsApp. */
+.vq-wa-previa{border-color:rgba(46,181,148,.30);background:linear-gradient(150deg,rgba(12,66,54,.18),rgba(5,22,30,.17));}
+.vq-wa-previa>span{color:#1fcda7;letter-spacing:.045em;}
+.vq-wa-previa p{background:#0c4639;color:#f0fff9;font-size:12px;line-height:1.64;padding:13px 15px;
+ border:1px solid rgba(83,204,160,.21);border-radius:4px 15px 15px 15px;margin-top:12px;
+ max-height:none;overflow:visible;overflow-wrap:anywhere;white-space:pre-wrap;}
+.vq-wa-previa p strong{color:#fff;font-weight:800;}
+.vq-wa-previa p em{color:#d4f6e9;}
+.vq-wa-dialog .vq-wa-ayuda{font-size:11px;}

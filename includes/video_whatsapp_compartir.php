@@ -1,12 +1,25 @@
 <?php
 /**
- * DEVIOZ VIDEOS V4.5.5: modal de compartir despues de una evaluacion.
+ * DEVIOZ VIDEOS V4.5.5.1: modal de compartir despues de una evaluacion.
  * La plataforma nunca envia mensajes: abre el compositor oficial de WhatsApp.
  * No se guarda el numero del destinatario ni el comentario en la BD o la sesion.
  */
 if (empty($intento) || empty($video['titulo'])) {
     return;
 }
+require_once __DIR__ . '/whatsapp_url_publica.php';
+$enlacePublicoDelVideo = null;
+try {
+    require_once __DIR__ . '/../models/Configuracion.php';
+    $configuracionCompartir = new Configuracion();
+    $enlacePublicoDelVideo = deviozUrlPublicaVideo(
+        (int)$idVideo,
+        $configuracionCompartir->obtener('url_publica_sitio')
+    );
+} catch (Throwable $e) {
+    error_log('DEVIOZ V4.5.5.1 - No se pudo consultar la URL publica: ' . $e->getMessage());
+}
+
 $paisesWhatsapp = [
     'América Latina y el Caribe' => [
         ['Argentina', '54'], ['Bolivia', '591'], ['Brasil', '55'],
@@ -48,12 +61,13 @@ $paisesWhatsapp = [
     aria-describedby="vqWhatsappDescripcion"
     data-abrir-auto="<?php echo !empty($abrirCompartirWhatsApp) ? '1' : '0'; ?>"
     data-video-id="<?php echo (int)$idVideo; ?>"
-    data-video-titulo="<?php echo $h($video['titulo']); ?>">
+    data-video-titulo="<?php echo $h($video['titulo']); ?>"
+    data-video-enlace-publico="<?php echo $h($enlacePublicoDelVideo ?? ''); ?>">
     <div class="vq-wa-interior">
         <div class="vq-wa-cabecera">
             <span class="vq-wa-icono" aria-hidden="true">✉</span>
             <div>
-                <span class="vq-eyebrow">DEVIOZ VIDEOS · V4.5.5</span>
+                <span class="vq-eyebrow">DEVIOZ VIDEOS · V4.5.5.1</span>
                 <h2 id="vqWhatsappTitulo">¡Terminaste tu evaluación!</h2>
             </div>
         </div>
@@ -81,20 +95,20 @@ $paisesWhatsapp = [
                 </div>
             </div>
             <span class="vq-wa-ayuda">Introduce el número nacional sin +51, sin prefijo y sin cero inicial.</span>
-            <label for="vqWhatsappEnlace">Enlace público al video (opcional)</label>
+            <label for="vqWhatsappEnlace">🔗 Enlace al video para compartir</label>
             <input id="vqWhatsappEnlace" type="url" inputmode="url" maxlength="2000" placeholder="https://tu-dominio.com/DEVIOZ-VIDEOS/public/detalle.php?id=...">
-            <span class="vq-wa-ayuda" id="vqWhatsappEnlaceAviso">Si tu plataforma está en localhost, el destinatario no podrá abrir ese enlace desde su dispositivo.</span>
+            <span class="vq-wa-ayuda" id="vqWhatsappEnlaceAviso">El enlace se genera con la URL pública del proyecto; puedes ajustarlo antes de compartir.</span>
             <div class="vq-wa-previa">
-                <span>Vista previa del mensaje</span>
+                <span>💬 Así se verá el mensaje en WhatsApp</span>
                 <p id="vqWhatsappVistaPrevia"></p>
             </div>
             <p id="vqWhatsappError" class="vq-wa-error" role="alert" hidden></p>
             <p id="vqWhatsappEstado" class="vq-wa-estado" role="status" hidden></p>
             <div class="vq-wa-acciones">
-                <a id="vqWhatsappEnviar" class="vq-primary" href="#" target="_blank" rel="noopener noreferrer">Abrir WhatsApp para enviar ↗</a>
+                <a id="vqWhatsappEnviar" class="vq-primary" href="#" target="_blank" rel="noopener noreferrer">Continuar en WhatsApp ↗</a>
                 <button id="vqWhatsappDespues" class="vq-secondary" type="button">Ahora no</button>
             </div>
         </form>
-        <small>WhatsApp abrirá el chat con tu mensaje preparado. Debes confirmar el envío allí; DEVIOZ no puede verificarlo. Compartir es opcional.</small>
+        <small>Se abrirá WhatsApp con tu mensaje listo. <strong>Pulsa Enviar dentro de WhatsApp</strong> para compartirlo. DEVIOZ no puede enviarlo por sí solo ni comprobar su entrega.</small>
     </div>
 </dialog>
