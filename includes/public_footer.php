@@ -17,7 +17,7 @@ Plataforma tecnológica de videos y aprendizaje
 <?php include __DIR__ . "/public_ai.php"; ?>
 
 
-<script src="../assets/js/public.js"></script>
+<script src="../assets/js/public.js?v=4.5.4"></script>
 <script src="../assets/js/navbar_responsive_fix.js?v=4.5.1.2"></script>
 <script src="../assets/js/portada_catalogo.js?v=4.5.1"></script>
 

@@ -631,6 +631,8 @@ Borrador
 
 <div class="acciones-contenedor">
 
+<a class="btn-editar" href="cuestionario.php?id_video=<?php echo (int)$video['id_video']; ?>" title="Gestionar cinco preguntas del video">5 preguntas</a>
+<a class="btn-editar" href="resultados_cuestionarios.php?id_video=<?php echo (int)$video['id_video']; ?>" title="Consultar las notas de los usuarios en este video">Notas</a>
 
 <a
 class="btn-editar"

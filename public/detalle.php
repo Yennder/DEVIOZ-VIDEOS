@@ -9,6 +9,7 @@ require_once "../includes/video_security.php";
 require_once "../controllers/DescargaController.php";
 require_once "../controllers/CapituloIAController.php";
 require_once "../controllers/ValoracionController.php";
+require_once "../models/CuestionarioVideo.php";
 
 $videoController = new VideoController();
 $temporadaController = new TemporadaController();
@@ -221,6 +222,20 @@ $estadoInteraccion = $interaccionController->estadoVideo(
 $valoracionActual = (new ValoracionController())->resumenVideo(
     (int)$id, usuarioAutenticado() ? (int)$_SESSION["id_usuario"] : 0
 );
+// V4.5.4: cuestionarios publicos independientes de los examenes Learning Lab.
+$cuestionarioPublico = null;
+$cuestionarioResumen = null;
+try {
+    $modeloQuizVideo = new CuestionarioVideo();
+    if ($modeloQuizVideo->instalado()) {
+        $cuestionarioPublico = $modeloQuizVideo->version((int)$id, 'publicado');
+        if ($cuestionarioPublico && usuarioAutenticado()) {
+            $cuestionarioResumen = $modeloQuizVideo->resumenUsuario((int)$id, (int)$_SESSION['id_usuario']);
+        }
+    }
+} catch (Throwable $e) {
+    error_log('DEVIOZ V4.5.4 - Cuestionario publico: ' . $e->getMessage());
+}
 $progresoVideo = ["posicion_segundos" => 0, "duracion_segundos" => 0, "porcentaje" => 0];
 $playlistsUsuario = [];
 
@@ -832,6 +847,7 @@ href="detalle.php?id=<?php echo (int)$siguiente["id_video"]; ?>"
 </div>
 
 <?php include "../includes/video_rating.php"; ?>
+<?php include "../includes/video_quiz_callout.php"; ?>
 
 <div class="video-actions-modern">
     <?php if(usuarioAutenticado()): ?>
@@ -1627,6 +1643,11 @@ window.DEVIOZ_AI_CONTEXT = {
 };
 </script>
 <script>
+// Si este video publico tiene cuestionario, priorizar el dialogo al terminar
+// incluso cuando el usuario ya haya realizado intentos. No altera Learning Lab.
+if (window.DEVIOZ_PLAYER) {
+    window.DEVIOZ_PLAYER.cuestionarioPendiente = <?php echo $cuestionarioPublico && !$esVistaLearning ? 'true' : 'false'; ?>;
+}
 window.DEVIOZ_INTERACTIONS = <?php echo json_encode([
     'endpoint' => '../api/interacciones.php',
     'csrfToken' => csrfToken(),
@@ -1651,4 +1672,5 @@ $deviozAiCourseContextAvailable = $deviozAiCourseId > 0;
 ?>
 <script src="../assets/js/capitulos.js"></script>
 <script src="../assets/js/valoraciones.js?v=4.5.3" defer></script>
+<script src="../assets/js/cuestionario_video.js?v=4.5.4.1" defer></script>
 <?php include "../includes/public_footer.php"; ?>

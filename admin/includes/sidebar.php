@@ -87,11 +87,14 @@ class="<?php echo menuActivo('/admin/dashboard.php'); ?>"
 
 <a
 href="/DEVIOZ-VIDEOS/admin/videos/listar.php"
-class="<?php echo menuActivo('/admin/videos/'); ?>"
+class="<?php echo str_contains($rutaActual, '/admin/videos/resultados_cuestionarios.php') ? '' : menuActivo('/admin/videos/'); ?>"
 >
 
 🎬 Videos
 
+</a>
+<a href="/DEVIOZ-VIDEOS/admin/videos/resultados_cuestionarios.php" class="<?php echo menuActivo('/admin/videos/resultados_cuestionarios.php'); ?>">
+📊 Notas por video
 </a>
 
 

@@ -768,7 +768,7 @@ function()
             function()
             {
 
-                if(!autoplayActivo)
+                if(!autoplayActivo || (config && config.cuestionarioPendiente))
                 {
                     return;
                 }
@@ -827,6 +827,8 @@ function()
         !config.esSerie
         ||
         !config.siguiente
+        ||
+        config.cuestionarioPendiente
     )
     {
 
